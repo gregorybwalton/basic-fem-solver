@@ -1,0 +1,13 @@
+# Test cases
+tests/
+studies/
+
+# External libaries
+ext/
+
+# Input datas
+data/
+
+# MATLAB processing scripts
+matlab/
+**/*.m
