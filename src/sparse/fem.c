@@ -15,14 +15,14 @@ void ichol(struct spmat,double *);
 int main ()
 {
 	soltype = 1; // just some boolean which change the problem type
-	//readmesh("inter.1","../data/region/");
-	readmesh("mesh_0","../data/3d/");
+	readmesh("inter.1","../../data/region/");
+	//readmesh("mesh_0","../data/3d/");
 	
 	spmatrices(); // generates the matrices in spare form
 	//printspmatrices(spstiff,load);
-	//jacobi(spstiff,load);
-	ichol(spstiff,load);
-	spsolve(spstiff,load,sol); // A sparse matrix version of solve - whatever that may be
+	jacobi(spstiff,load);
+	//ichol(spstiff,load);
+	spsolve(spstiff,load,sol); // A sparse matrix version of solve
 
 	vtkoutput(sol);
 	resoutput(sol);

@@ -1,4 +1,4 @@
-#include "fem.h"
+#include "../fem.h"
 
 void jacobi(spstiff,sol)
 // Jacobi preconditioner, simply divide through by the leading diagonal
@@ -50,16 +50,6 @@ double *sol;
         for (j=0;j<nn;j++)
         {
 		list[j]->val = sqrt(list[j]->val); // square the diagonals
-		/*
-		if (list[j]->val < 0)
-		{
-			list[j]->val = -sqrt(fabs(list[j]->val));
-		}
-		else
-		{
-			list[j]->val = sqrt(list[j]->val);
-		}
-		*/
 
 		// Will need to sort the linked lists to improve efficiency
 		// Subtracting the strict lower diagonal by column product

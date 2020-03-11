@@ -6,6 +6,7 @@ struct gauss preGauss(void);
 void printlist(list_node **,int,int);
 void writelist(list_node **,int,int,char *);
 void listadd(list_node *,int,double);
+double scaling(int);
 
 void spmatrices(void)
 {
@@ -30,7 +31,6 @@ void spmatrices(void)
 	int ibd = 0;
 	int jbd = 0;
 	int nzeros; // non-zeros entries
-	double kappa;
 	
 	sloc = (double *) calloc(knode*dim,sizeof(double));
         load = (double *)calloc(msh.ntrue,sizeof(double));
@@ -83,15 +83,6 @@ void spmatrices(void)
 		}
 
 
-		if (region[el] == 0)
-		{
-			kappa = 1.0;
-		}
-		else if (region[el] == 1)
-		{
-			kappa = 1.0e3;
-		}
-
 		// volume of element
 		sixvol = 1.0*det3(sloc[3],sloc[4],sloc[5],sloc[6],sloc[7],sloc[8],sloc[9],sloc[10],sloc[11])\
 				-sloc[0]*det3(1.0,sloc[4],sloc[5],1.0,sloc[7],sloc[8],1.0,sloc[10],sloc[11])\
@@ -118,11 +109,12 @@ void spmatrices(void)
 
 					// where does kappa go?	
 					kij = (1.0/(6.0*sixvol))*(bc[j]*bc[i]+cc[j]*cc[i]+dc[j]*dc[i]);
+					kij *= scaling(region[el]);
 					//printf("kij = %.5f\n",kij);
 
 	                                if (ibd>=0)
 					{
-	                                        listadd(arrlist[jbd],ibd,kij*kappa);
+	                                        listadd(arrlist[jbd],ibd,kij);
 					}
 					else if (ibd==-1)
 					{
@@ -208,8 +200,20 @@ int genspstruct(list_node **arrlist, int *icon, int *bdflag, int nel, int knode)
 	return nzcount;
 }
 
+double scaling(region)
+int region;
+{
+	if (region==0)
+	{
+		return 1.0;
+	}
+	else if (region==1)
+	{
+		return 1.0e3;
+	}
+}
 
-void heatscaling(scal,s,icon,nel,knode,dim)
+void findscaling(scal,s,icon,nel,knode,dim)
 // Generates the heat scaling for adaptivity target
 double *scal,*s;
 int *icon;

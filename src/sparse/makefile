@@ -3,8 +3,7 @@ LIBS= -L/home/csunix/linux/apps/install/gsl/2.6/lib -I/home/csunix/linux/apps/in
 CFLAGS=-lm -ggdb -lgsl -lgslcblas #-pg
 OBJS=fem.c \
 ../readmesh.c ../output.c ../calcerror.c ../addfuncs.c ../listtool.c\
-../pc.c\
-spmatrices.c spsolve.c printspmatrices.c
+spmatrices.c spsolve.c printspmatrices.c pc.c
 
 obj = $(patsubst %.c,%.o,$(OBJS))
 
