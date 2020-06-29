@@ -17,3 +17,8 @@ matlab/
 
 # Object files
 **/*.o
+
+# PETSc working files
+src/petsc/parallel/*.bin
+src/petsc/parallel/*.bin.info
+
