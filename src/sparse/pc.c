@@ -1,15 +1,17 @@
 #include "../fem.h"
 
+list_node** copylist(list_node**,int);
+
 void jacobi(spstiff,sol)
 // Jacobi preconditioner, simply divide through by the leading diagonal
-struct spmat spstiff;
+struct sysmat spstiff;
 double *sol;
 {
 	printf("Jacobi preconditioner.\n");
-	int nnode = msh.ntrue;
+	int nnode = msh.neq;
 	list_node **list = spstiff.head;
 	list_node *current;
-	int node,nbd;
+	int node;
 	double diag;
 
 	for (node=0;node<nnode;node++)
@@ -22,7 +24,7 @@ double *sol;
 			current->val = current->val/diag;
 			current = current->next;
 		}
-		load[node] = load[node]/diag;
+		//load[node] = load[node]/diag;
 	}
 
 	//printlist(list,nnode,1);
@@ -32,14 +34,13 @@ void ichol(spstiff,sol)
 // Incomplete Cholesky factorisation
 // Follows the algorithm as presented in "INCOMPLETE CHOLESKY FACTORIZATIONS WITH LIMITED
 // MEMORY" by Lin and More
-//
 // WARNING: From testing, it only produces a correct lower diagonal matrix
-struct spmat spstiff;
+struct sysmat spstiff;
 double *sol;
 {
 	printf("Incomplete Cholesky factorisiation.\n");
 
-        int nn = msh.ntrue;
+        int nn = msh.neq;
         int i, j, k;
 	list_node **list = spstiff.head;
 	int nnz = spstiff.nzeros;	
@@ -79,7 +80,7 @@ double *sol;
 					aik = aik->next;
 				}
 				
-				if (ajk != NULL & aij != NULL & aik != NULL)
+				if ((ajk != NULL) & (aij != NULL) & (aik != NULL))
 				{
 					printf("i = %d, j = %d, k = %d\n",i,j,k);
 					//printf("aij = %.5f, aik = %.5f, ajk = %.5f\n",aij->val,aik->val,ajk->val);
@@ -126,4 +127,33 @@ double *sol;
 
 	printf("BREAKING!\n");
 	exit(0);
+}
+
+list_node** copylist(head,nt)
+list_node** head;
+int nt;
+{
+	list_node **newhead = (list_node **)calloc(nt,sizeof(list_node *));
+	list_node *newcurrent;
+	list_node *current;
+	int ii;
+
+	for (ii=0;ii<nt;ii++)
+	{
+		newhead[ii] = (list_node *)malloc(sizeof(list_node));
+		newhead[ii]->na = head[ii]->na;
+		newhead[ii]->val = head[ii]->na;
+		newhead[ii]->next = NULL;
+		newcurrent = newhead[ii];
+		current = head[ii];
+		
+		while (current->next != NULL)
+		{
+			newcurrent->next = (list_node *)malloc(sizeof(list_node));
+			newcurrent->next->na = current->next->na;
+			newcurrent->next->val = current->next->val;
+			newcurrent->next->next = NULL;
+		}
+	}
+	return newhead;
 }

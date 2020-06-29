@@ -5,7 +5,6 @@ char fnm[50];
 char fdir[50];
 {
 	char nfnm[100];
-	char sdir[100];
 	char efnm[100];
 	FILE *nfil;
 	FILE *efil;
@@ -14,6 +13,7 @@ char fdir[50];
 	int nele,knode;
 	int abt;
 	int nreg,n;
+	int srt;
 
 	strcpy(ifnm,fnm);
 
@@ -26,7 +26,7 @@ char fdir[50];
 
 	nfil = fopen(nfnm,"r");
 
-	fscanf(nfil,"%d %d %*d %*d\n",&nnode,&dim);
+	srt = fscanf(nfil,"%d %d %*d %*d\n",&nnode,&dim);
 	
 	msh.nnode = nnode;
 	msh.dim = dim;
@@ -35,12 +35,12 @@ char fdir[50];
 
 	for (node=0;node<nnode;node++)
 	{
-		fscanf(nfil,"%*d");
+		srt = fscanf(nfil,"%*d");
 		for (n=0;n<dim;n++)
 		{
-			fscanf(nfil," %lf",&msh.s[node*dim+n]);
+			srt = fscanf(nfil," %lf",&msh.s[node*dim+n]);
 		}
-		fscanf(nfil," %d\n",&abt);
+		srt = fscanf(nfil," %d\n",&abt);
 	                
 		msh.bdflag[node] = abs(abt);
         	//printf("s(:,%d) = %.2f %.2f %.2f, bdflag = %d\n",node,msh.s[node*dim],msh.s[node*dim+1],msh.s[node*dim+2],msh.bdflag[node]);
@@ -52,7 +52,7 @@ char fdir[50];
 	printf("%s\n",efnm);
 
 	efil = fopen(efnm,"r");
-	fscanf(efil,"%d %d %d\n",&nele,&knode,&nreg);
+	srt = fscanf(efil,"%d %d %d\n",&nele,&knode,&nreg);
 	msh.nel = nele;
 	msh.knode = knode;
 	msh.icon = (int *)malloc(sizeof(int)*nele*knode);
@@ -60,22 +60,22 @@ char fdir[50];
 
 	for (el=0;el<nele;el++)
 	{
-		fscanf(efil,"%*d");
+		srt = fscanf(efil,"%*d");
 		for (n=0;n<knode;n++)
 		{
-			fscanf(efil," %d",&msh.icon[el*knode+n]);
+			srt = fscanf(efil," %d",&msh.icon[el*knode+n]);
 		}
 
 		if (nreg == 1)
 		{
-			fscanf(efil," %d",&msh.region[el]);
+			srt = fscanf(efil," %d",&msh.region[el]);
 		}
 		else
 		{
 			msh.region[el] = 0;
 		}
 		//printf("region[%d] = %d\n",el,msh.region[el]);
-		fscanf(efil,"\n");
+		srt = fscanf(efil,"\n");
 		//msh.region[el] = 0;
 
 		// Reduce the index by one
@@ -103,13 +103,13 @@ char fdir[50];
 	        }
 		//printf("msh bdflag[%d] = %d\n",node,msh.bdflag[node]);
 	}
-	msh.ntrue = nintr;
+	msh.neq = nintr;
 
 	printf("Number of dimensions = %d\n",msh.dim);
 	printf("Number of nodes per element = %d\n",msh.knode);
 	printf("Number of nodes = %d\n",msh.nnode);
 	printf("Number of elements = %d\n",msh.nel);
-	printf("Number of interior nodes = %d\n",msh.ntrue);
+	printf("Number of unknowns = %d\n",msh.neq);
 	printf("--------------------\n");
 
 }

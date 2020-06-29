@@ -2,6 +2,9 @@
 tests/
 studies/
 
+# Results
+src/sparse/results/
+
 # External libaries
 ext/
 
@@ -11,3 +14,6 @@ data/
 # MATLAB processing scripts
 matlab/
 **/*.m
+
+# Object files
+**/*.o

@@ -1,9 +1,10 @@
 #include "fem.h"
 
-void errorouput(double,double *);
+void erroroutput(double,double *);
 
-void calcerror(u)
+double calcerror(u,pidx)
 double *u;
+int pidx;
 {
 	printf("Calculating the error...\n");
 	int nnode = msh.nnode;
@@ -12,7 +13,7 @@ double *u;
 	int node;
 	double uex;
 	double *error;
-	double nerror;
+	double nerror = 0.0;
 
 	error = (double *)calloc(nnode,sizeof(double));
 	for (node=0;node<nnode;node++)
@@ -21,11 +22,15 @@ double *u;
 		error[node] = fabs(u[node]-uex);
 		nerror = nerror + error[node]*error[node];
 	}
-	nerror = sqrtf(nerror)/nnode;
+	nerror = sqrt(nerror)/nnode;
 	printf("||Error|| = %.15f\n",nerror);
 
-	erroroutput(nerror,error);
+	if (pidx == 1)
+	{
+		erroroutput(nerror,error);
+	}
 
 	free(error);
+	return nerror;
 }
 

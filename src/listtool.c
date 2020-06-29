@@ -1,4 +1,5 @@
 #include "fem.h"
+// Contains additional functionality related to linked lists
 
 void printlist(list_node **list, int nnode, int swh)
 {
@@ -85,10 +86,9 @@ int n;
 void listtrans(spstiff)
 // Transpose a linked list
 // NOT TESTED
-struct spmat spstiff;
+struct sysmat spstiff;
 {
-        int nnode = msh.ntrue;
-        int nt = msh.ntrue;
+        int nt = msh.neq;
         list_node **list = spstiff.head;
         int node;
 
@@ -102,22 +102,9 @@ struct spmat spstiff;
 
 }
 
-void listadd(curr,n,k)
-list_node *curr;
-int n;
-double k;
-// Add an scalar to an element of the linked list
-// Used for adding the local stiffness element to global sparse matrix
-{
-        while (curr->na != n)
-        {
-                curr = curr->next;
-        }
-
-        curr->val = curr->val + k;
-}
-
 double listget(curr,n)
+// Get value from the linked list
+// NOT TESTED
 list_node *curr;
 int n;
 {

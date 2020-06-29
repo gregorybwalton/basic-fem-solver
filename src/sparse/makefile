@@ -1,16 +1,19 @@
 CC=gcc
-LIBS= -L/home/csunix/linux/apps/install/gsl/2.6/lib -I/home/csunix/linux/apps/install/gsl/2.6/include
-CFLAGS=-lm -ggdb -lgsl -lgslcblas #-pg
+INCLUDE=-I/home/csunix/linux/apps/install/gsl/2.6/include
+LDFLAGS=-L/home/csunix/linux/apps/install/gsl/2.6/lib
+LDLIBS=-lm -ggdb -lgsl -lgslcblas
 OBJS=fem.c \
-../readmesh.c ../output.c ../calcerror.c ../addfuncs.c ../listtool.c\
-spmatrices.c spsolve.c printspmatrices.c pc.c
+../readmesh.c ../output.c ../calcerror.c ../addfunc.c ../listtool.c ../sparsemat.c \
+gslsolve.c printspmatrices.c pc.c
 
 obj = $(patsubst %.c,%.o,$(OBJS))
 
-fem: $(obj)
-	$(CC) $(obj) $(LIBS) -o fem $(CFLAGS)
+all: $(obj) fem
+
 $(obj):%.o:%.c
-	$(CC) -c $(LIBS) -o $@ $< $(CFLAGS)
+	$(CC) -c $(INCLUDE) $(LDFLAGS) -o $@ $<
+fem:
+	$(CC) $(obj) $(INCLUDE) $(LDFLAGS) $(LDLIBS) -o fem 
 
 clean:
 	rm fem *.o ../*.o

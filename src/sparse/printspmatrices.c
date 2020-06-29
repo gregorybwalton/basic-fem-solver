@@ -1,10 +1,10 @@
 #include "../fem.h"
 
 void printspmatrices(spstiff,load)
-struct spmat spstiff;
+struct sysmat spstiff;
 double *load;
 {
-	int nt = msh.ntrue;
+	int nt = msh.neq;
 	
 	printf("Writing stiffness matrix and load vector to file.\n");
         FILE *kfil;
@@ -13,7 +13,7 @@ double *load;
         lfil = fopen("f_vector","w");
 
 	list_node *current;
-        int i,j;
+        int i;
         for (i=0;i<nt;i++)
         {
                 fprintf(lfil,"%d %.10f\n",i,load[i]);
