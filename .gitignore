@@ -3,7 +3,8 @@ tests/
 studies/
 
 # Results
-src/sparse/results/
+src/sparse/results/**
+src/petsc/results/**
 
 # External libaries
 ext/

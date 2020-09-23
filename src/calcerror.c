@@ -12,25 +12,32 @@ int pidx;
 	int dim = msh.dim;
 	int node;
 	double uex;
-	double *error;
-	double nerror = 0.0;
+	double *abse; // absolute error
+	double *rele; // relative error
+	double nabse = 0.0;
+	double nrele = 0.0;
 
-	error = (double *)calloc(nnode,sizeof(double));
+	abse = (double *)calloc(nnode,sizeof(double));
+	rele = (double *)calloc(nnode,sizeof(double));
 	for (node=0;node<nnode;node++)
 	{
 		uex = phiFunc(s[node*dim+0],s[node*dim+1],s[node*dim+2]);
-		error[node] = fabs(u[node]-uex);
-		nerror = nerror + error[node]*error[node];
+		abse[node] = fabs(u[node]-uex);
+		rele[node] = abse[node]/uex;
+		nabse = nabse + abse[node]*abse[node];
+		nrele = nrele + rele[node]*rele[node];
 	}
-	nerror = sqrt(nerror)/nnode;
-	printf("||Error|| = %.15f\n",nerror);
+	//nabse = sqrt(nabse)/nnode;
+	nabse = sqrt(nabse);
+	printf("||Error|| = %.15f\n",nabse/nnode);
 
 	if (pidx == 1)
 	{
-		erroroutput(nerror,error);
+		erroroutput(nabse,abse);
 	}
 
-	free(error);
-	return nerror;
+	free(abse);
+	free(rele);
+	return nabse;
 }
 

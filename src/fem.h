@@ -4,6 +4,7 @@
 #include <sys/resource.h>
 #include <string.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 // Define global variables here
 struct mesh

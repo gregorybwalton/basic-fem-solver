@@ -21,7 +21,7 @@ int main (int nargin, char *argsin[])
 	ptsolve(&nargin,&argsin,helpstr,false); // Solve sparse matrix using PETSc, working in serial
 
 	vtkoutput(spstiff.sol);
-	resoutput(spstiff.sol);
+	//resoutput(spstiff.sol);
 	
 	return 0;
 }

@@ -127,6 +127,7 @@ double *res;
         for (i=0;i<nnode;i++){
                 fprintf(vtkfil,"%2.6f\n",res[i]);
         }
+        fprintf(vtkfil,"\n");
 
 	// print index for each part
 	fprintf(vtkfil,"CELL_DATA %d\n",nel);

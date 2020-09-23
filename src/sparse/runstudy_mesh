@@ -1,0 +1,12 @@
+#!/bin/bash
+
+rm results/*
+touch results/rdata
+
+make clean
+make
+
+for i in {0..9}
+do
+	./fem mesh_$i
+done

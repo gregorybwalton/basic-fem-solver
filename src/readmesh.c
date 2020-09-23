@@ -1,5 +1,7 @@
 #include "fem.h"
 
+void chkinterior(double *,int *);
+
 void readmesh(fnm,fdir)
 char fnm[50];
 char fdir[50];
@@ -43,7 +45,8 @@ char fdir[50];
 		srt = fscanf(nfil," %d\n",&abt);
 	                
 		msh.bdflag[node] = abs(abt);
-        	//printf("s(:,%d) = %.2f %.2f %.2f, bdflag = %d\n",node,msh.s[node*dim],msh.s[node*dim+1],msh.s[node*dim+2],msh.bdflag[node]);
+        	chkinterior(&msh.s[node*dim],&msh.bdflag[node]);
+		//printf("(%.15f,%.15f,%.15f), %i\n",msh.s[node*dim+0],msh.s[node*dim+1],msh.s[node*dim+2],msh.bdflag[node]);
 	}
         fclose(nfil);
         
@@ -64,6 +67,7 @@ char fdir[50];
 		for (n=0;n<knode;n++)
 		{
 			srt = fscanf(efil," %d",&msh.icon[el*knode+n]);
+			//printf("%d, ",msh.icon[el*knode+n]);
 		}
 
 		if (nreg == 1)
@@ -74,7 +78,7 @@ char fdir[50];
 		{
 			msh.region[el] = 0;
 		}
-		//printf("region[%d] = %d\n",el,msh.region[el]);
+		//printf("reg[%d] = %d\n",el,msh.region[el]);
 		srt = fscanf(efil,"\n");
 		//msh.region[el] = 0;
 
@@ -94,14 +98,16 @@ char fdir[50];
 	{
         	if (msh.bdflag[node]==0)
 		{
+			// interior
                 	msh.bdflag[node] = nintr;
 			nintr++;
 	        }
 	        else if (msh.bdflag[node]==1)
 		{
+			// boundary
         	        msh.bdflag[node] = -1;
 	        }
-		//printf("msh bdflag[%d] = %d\n",node,msh.bdflag[node]);
+		//printf("(%.15f,%.15f,%.15f), %i\n",msh.s[node*dim+0],msh.s[node*dim+1],msh.s[node*dim+2],msh.bdflag[node]);
 	}
 	msh.neq = nintr;
 
@@ -112,4 +118,28 @@ char fdir[50];
 	printf("Number of unknowns = %d\n",msh.neq);
 	printf("--------------------\n");
 
+}
+
+void chkinterior(s,bd)
+double *s;
+int *bd;
+{
+	// check all interior nodes
+	int ii;
+	double tol = 1e-12;
+	int chk = 1;
+	for (ii=0;ii<3;ii++)
+	{
+		if (fabs(*(s+ii)-1.0)<tol || fabs(*(s+ii)-0.0)<tol)
+		{
+			chk = 0;
+		}
+	}
+
+	if (chk==1)
+	{
+		*bd = 0;
+		//printf("(%.15f,%.15f,%.15f), %i\n",*(s+0),*(s+1),*(s+2),*bd);
+	}
+	return;
 }

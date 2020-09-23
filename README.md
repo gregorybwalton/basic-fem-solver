@@ -6,5 +6,5 @@
 - [See here for installation instructions](https://www.mcs.anl.gov/petsc/)
 
 ## To do
-- ICF preconditioner
+[ ] ICF preconditioner
 
