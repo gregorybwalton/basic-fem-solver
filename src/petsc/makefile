@@ -1,5 +1,7 @@
-PETSC_DIR=/home/cserv1_a/soc_pg/scgwa/not-backed-up/phd/petsc/3.012.4
-PETSC_ARCH=arch-linux2-c-debug
+#PETSC_DIR=/home/cserv1_a/soc_pg/scgwa/not-backed-up/phd/petsc/3.012.4
+#PETSC_ARCH=arch-linux2-c-debug
+PETSC_DIR=/home/cserv1_a/soc_pg/scgwa/not-backed-up/phd/petsc
+PETSC_ARCH=petsc-3.012.4-openmpi
 
 CC=mpicc
 #CC=gcc
@@ -14,8 +16,8 @@ OBJS=fem.c\
 
 all: main
 
-#include ${PETSC_DIR}/lib/petsc/conf/variables
-include ${PETSC_DIR}/lib/petsc/conf/rules
+#include ${PETSC_DIR}/lib/petsc/conf/rules
+include ${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/rules
 
 obj = $(patsubst %.c,%.o,$(OBJS))
 

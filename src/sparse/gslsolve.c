@@ -88,7 +88,7 @@ struct sysmat spstiff;
                 if (nbd>=0)
 		{
 			spstiff.sol[node] = gsl_vector_get(u,nbd);
-			printf("sol(%.5f,%.5f,%.5f) = %.15f\n",msh.s[node*dim+0],msh.s[node*dim+1],msh.s[node*dim+2],spstiff.sol[node]);
+			//printf("sol(%.5f,%.5f,%.5f) = %.15f\n",msh.s[node*dim+0],msh.s[node*dim+1],msh.s[node*dim+2],spstiff.sol[node]);
 		}
 	}
 
