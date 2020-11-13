@@ -6,8 +6,6 @@ studies/
 src/sparse/results/**
 src/petsc/results/**
 
-# External libaries
-ext/
 
 # Input datas
 data/
