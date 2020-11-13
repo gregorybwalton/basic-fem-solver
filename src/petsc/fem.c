@@ -6,7 +6,7 @@ static char helpstr[] = "Simple 3D FEM solver.\n\n";
 void readmesh(char *,char *);
 void vtkoutput(double *);
 void resoutput(double *);
-void spmatrices(void);
+void d3n4(void);
 void ptsolve(int *,char ***,char *,bool);
 char* meshselect(int,char **);
 
@@ -15,9 +15,10 @@ int main (int nargin, char *argsin[])
 
 	soltype = 1; // just some boolean which change the problem type
 	//readmesh(meshselect(nargin,argsin),"../../data/3d/");
-	readmesh(meshselect(nargin,argsin),"../../data/region/innersmall/");
-	
-	spmatrices(); // generates the matrices in spare form
+	//readmesh(meshselect(nargin,argsin),"../../data/region/innersmall/");
+	readvtk("inner","../../data/grummp/");
+
+	d3n4(); // generates the matrices in spare form
 	ptsolve(&nargin,&argsin,helpstr,false); // Solve sparse matrix using PETSc, working in serial
 
 	vtkoutput(spstiff.sol);

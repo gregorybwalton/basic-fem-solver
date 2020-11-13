@@ -14,9 +14,8 @@ char fdir[50];
 	char efnm[100];
 	FILE *nfil;
 	FILE *efil;
-	int nnode,dim;
-	int node,el,i;
-	int nele,knode;
+	int nnode,dim,nele,knode;
+	int node,el,i,nintr;
 	int abt;
 	int nreg,n;
 	int srt;
@@ -97,7 +96,7 @@ char fdir[50];
 	}
 	fclose(efil);
 
-	int nintr = 0; // Number of non-boundary nodes
+	nintr = 0; // Number of non-boundary nodes
 	for (node=0;node<nnode;node++)
 	{
         	if (msh.bdflag[node]==0)
@@ -169,6 +168,7 @@ char fdir[50];
 	printf("\n--------------------\n");
 	printf("Reading in mesh...\n");
 
+	strcpy(ifnm,fnm);
         snprintf(nfnm,sizeof(nfnm),"%s%s%s",fdir,fnm,".vtk");
         printf("%s\n",nfnm);
 
@@ -202,7 +202,6 @@ char fdir[50];
 	// elements
 	srt = fscanf(fil,"%*s %d %*f\n",&nele);
 	msh.nel = nele;
-	msh.region = (int *)malloc(sizeof(int)*nele);
 	nei = 0;
 	for (el=0;el<nele;el++)
 	{
@@ -212,7 +211,7 @@ char fdir[50];
 			msh.knode = knode;
 			msh.icon = (int *)malloc(sizeof(int)*nele*knode);
 		}
-		if (knode>=3)
+		if (knode>3)
 		{
 			for (n=0;n<knode;n++)
 			{
@@ -220,11 +219,20 @@ char fdir[50];
 			}
 			nei++;
 		}
+		else
+		{
+			for (n=0;n<knode;n++)
+			{
+				srt = fscanf(fil," %*d");
+			}
+		}
 		srt = fscanf(fil,"\n");
 	}
 	msh.nel = nei;
-	msh.icon = (int *)realloc(msh.icon,sizeof(int)*msh.nel);
-
+	//printf("msh.nel*knode = %d\n",msh.nel*knode);
+	//msh.icon = (int *)realloc(msh.icon,sizeof(int)*msh.nel*knode);
+	//exit(0);
+	
 	// cell types
 	srt = fscanf(fil,"%*[^\n]\n");
 	for (el=0;el<nele;el++)
@@ -241,8 +249,9 @@ char fdir[50];
 	for (node=0;node<nnode;node++)
         {
 		srt = fscanf(fil,"%d\n",&verttyp);
-		chkinterior(&msh.s[node*dim],&msh.bdflag[node]);
 		// Going to need to rely on checker
+		chkinterior(&msh.s[node*dim],&msh.bdflag[node]);
+		
 		/*
 		if (verttyp == 6)
 		{
@@ -271,15 +280,16 @@ char fdir[50];
         {
                 srt = fscanf(fil,"%*[^\n]\n");
         }
-        for (node=0;node<nnode;node++)
+	msh.region = (int *)malloc(sizeof(int)*msh.nel);
+        for (el=0;el<msh.nel;el++)
         {
 		//srt = fscanf(fil,"%lf\n",&ctyp[node]);
 		// watch out this could be a problem - inconsistent with the previous length of region
-		srt = fscanf(fil,"%lf\n",&msh.region[node]);
-		msh.region[node]--;
+		srt = fscanf(fil,"%d\n",&msh.region[el]);
+		msh.region[el]--;
+		//printf("region[%d] = %d\n",el,msh.region[el]);
 	}
 	fclose(fil);
-
 
         int nintr = 0; // Number of non-boundary nodes
         for (node=0;node<nnode;node++)
@@ -322,7 +332,7 @@ int *bd;
 		if (fabs(*(s+ii)-bdx1)<tol || fabs(*(s+ii)-bdx2)<tol)
 		{
 			*bd = 1;
-			printf("(%.15f,%.15f,%.15f), %i\n",*(s+0),*(s+1),*(s+2),*bd);
+			//printf("(%.15f,%.15f,%.15f), %i\n",*(s+0),*(s+1),*(s+2),*bd);
 			return;
 		}
 	}

@@ -11,7 +11,7 @@ LDFLAGS=-L${PETSC_DIR}/${PETSC_ARCH}/lib
 LDLIBS=-lm -g -w\
 	-lpetsc
 OBJS=fem.c\
-	../readmesh.c ../output.c ../calcerror.c ../addfunc.c ../listtool.c ../sparsemat.c \
+	../readmesh.c ../output.c ../calcerror.c ../addfunc.c ../listtool.c ../d3n4.c \
 	psolve.c
 
 all: main
