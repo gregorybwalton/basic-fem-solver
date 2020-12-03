@@ -12,7 +12,7 @@ LDLIBS=-lm -g -w\
 	-lpetsc
 OBJS=fem.c\
 	../readmesh.c ../output.c ../calcerror.c ../addfunc.c ../listtool.c ../d3n4.c \
-	psolve.c
+	psolve.c ./proto/meshquality.c 
 
 all: main
 
@@ -27,4 +27,4 @@ $(obj): %.o:%.c
 	$(CC) -c $(INCLUDE) $(LDFLAGS) $(LDLIBS) $< -o $@
 
 clean::
-	rm fem *.o ../*.o
+	rm fem *.o ../*.o ./proto/*.o

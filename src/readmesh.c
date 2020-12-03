@@ -160,7 +160,7 @@ char fdir[50];
         FILE *fil;
 	int i,n,node,el,nei;
 	int nnode,nele,knode,nint,dim;
-	int verttyp,knlim;
+	int verttyp,knmin;
 	int srt;
 	double *lensc;
 	int *ctyp;
