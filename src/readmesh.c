@@ -160,7 +160,7 @@ char fdir[50];
         FILE *fil;
 	int i,n,node,el,nei;
 	int nnode,nele,knode,nint,dim;
-	int verttyp;
+	int verttyp,knlim;
 	int srt;
 	double *lensc;
 	int *ctyp;
@@ -188,7 +188,8 @@ char fdir[50];
 	// nodes
         srt = fscanf(fil,"%*s %d %*s\n",&nnode);
 	msh.nnode = nnode;
-	dim = 3;
+	dim = 3; // Will always be 3d, but for 2d, x3=0.0
+	knmin = 3; // The minimum number of nodes per element to be read
 	msh.dim = dim;
 	msh.s = (double *)malloc(sizeof(double)*nnode*dim);
 	msh.bdflag = (int *)malloc(sizeof(int)*nnode);
@@ -201,7 +202,6 @@ char fdir[50];
 
 	// elements
 	srt = fscanf(fil,"%*s %d %*f\n",&nele);
-	msh.nel = nele;
 	nei = 0;
 	for (el=0;el<nele;el++)
 	{
@@ -209,29 +209,29 @@ char fdir[50];
 		if (el==0)
 		{
 			msh.knode = knode;
-			msh.icon = (int *)malloc(sizeof(int)*nele*knode);
+			icontmp = (int *)malloc(sizeof(int)*nele*knode);
 		}
-		if (knode>3)
+		//printf("knode[%d] = %d\n",el,knode);
+		if (knode>knmin)
 		{
-			for (n=0;n<knode;n++)
-			{
-				srt = fscanf(fil," %d",&msh.icon[el*knode+n]);
-			}
 			nei++;
 		}
-		else
+		for (n=0;n<knode;n++)
 		{
-			for (n=0;n<knode;n++)
-			{
-				srt = fscanf(fil," %*d");
-			}
+			srt = fscanf(fil," %d",&icontmp[el*knode+n]);
 		}
 		srt = fscanf(fil,"\n");
 	}
 	msh.nel = nei;
-	//printf("msh.nel*knode = %d\n",msh.nel*knode);
-	//msh.icon = (int *)realloc(msh.icon,sizeof(int)*msh.nel*knode);
-	//exit(0);
+	nels = nele;
+	msh.icon = (int *)malloc(sizeof(int)*msh.nel*knode);
+	for (el=0;el<msh.nel;el++)
+	{
+		for (n=0;n<knode;n++)
+		{
+			msh.icon[el*knode+n]=icontmp[el*knode+n];
+		}
+	}
 	
 	// cell types
 	srt = fscanf(fil,"%*[^\n]\n");

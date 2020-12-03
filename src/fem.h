@@ -46,6 +46,7 @@ int soltype; // define the soltype
 char sfnm[50]; // save file name
 char ifnm[50]; // input file name
 //double *stiff, *load, *sol;
+int nels,*icontmp;
 
 // Define global functions here
 double phiFunc(double,double,double);
