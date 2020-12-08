@@ -45,6 +45,7 @@ struct sysmat spstiff;
 int soltype; // define the soltype
 char sfnm[50]; // save file name
 char ifnm[50]; // input file name
+char idir[50]; // input file directory
 //double *stiff, *load, *sol;
 int nels,*icontmp;
 

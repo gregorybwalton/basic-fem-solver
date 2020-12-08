@@ -8,11 +8,13 @@ CC=mpicc
 INCLUDE=-I${PETSC_DIR}/include -I${PETSC_DIR}/${PETSC_ARCH}/include
 LDFLAGS=-L${PETSC_DIR}/${PETSC_ARCH}/lib
 #LDLIBS=-lm -ggdb
-LDLIBS=-lm -g -w\
+LDLIBS=-lm -w\
 	-lpetsc
 OBJS=fem.c\
-	../readmesh.c ../output.c ../calcerror.c ../addfunc.c ../listtool.c ../d3n4.c \
-	psolve.c ./proto/meshquality.c 
+	../readtetgen.c ../output.c ../calcerror.c ../addfunc.c ../listtool.c ../d3n4.c \
+	psolve.c \
+	./proto/meshvolume.c
+	#./proto/meshlengthscale.c 
 
 all: main
 
