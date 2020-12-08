@@ -3,6 +3,7 @@
 void chkinterior(double *,int *);
 void readnode();
 void readele();
+void readface(int *,int *);
 
 void readmesh(fnm,fdir)
 char fnm[50];
@@ -12,8 +13,7 @@ char fdir[50];
 // fdir is the file directory
 // Needs be files with the extension .node and .ele
 {
-	int nnode,dim,nele,knode;
-	int node,el,i,nintr;
+	int node,nintr;
 	int abt;
 	int nreg,n;
 
@@ -23,11 +23,14 @@ char fdir[50];
 	printf("\n--------------------\n");
 	printf("Reading in mesh...\n");
 
-        readnode;
-	readele;
+        readnode();
+	readele();
+
+	int *iconf,*bdff;
+	readface(iconf,bdff);
 
 	nintr = 0; // Number of non-boundary nodes
-	for (node=0;node<nnode;node++)
+	for (node=0;node<msh.nnode;node++)
 	{
         	if (msh.bdflag[node]==0)
 		{
@@ -54,6 +57,7 @@ char fdir[50];
 }
 
 void readnode( )
+// Read .node file
 {
 	FILE *nfil;
 	char nfnm[100];
@@ -64,7 +68,11 @@ void readnode( )
 
 	printf("Reading: %s\n",nfnm);
 
-	nfil = fopen(nfnm,"r");
+	if ((nfil = fopen(nfnm,"r"))==NULL)
+	{
+		printf("cannot open: %s\n",nfnm);
+		exit(1);
+	}
 
 	srt = fscanf(nfil,"%d %d %*d %*d\n",&nnode,&dim);
 	
@@ -92,6 +100,7 @@ void readnode( )
 }
 
 void readele( )
+// Read .ele file
 {
 	FILE *efil;
 	char efnm[100];
@@ -103,7 +112,11 @@ void readele( )
 
 	printf("Reading: %s\n",efnm);
 
-	efil = fopen(efnm,"r");
+	if ((efil = fopen(efnm,"r"))==NULL)
+	{
+		printf("cannot open: %s\n",efnm);
+		exit(1);
+	}
 
 	srt = fscanf(efil,"%d %d %d\n",&nele,&knode,&nreg);
 
@@ -139,6 +152,43 @@ void readele( )
 	}
 	fclose(efil);
 
+	return;
+}
+
+void readface(iconf,bdflagf)
+// Read .face file
+int *iconf,*bdflagf;
+{
+	FILE *ffil;
+	char ffnm[100];
+	int srt;
+	int n,nf,bif,nface;
+	int kf = msh.knode-1;
+	
+	snprintf(ffnm,sizeof(ffnm),"%s%s%s",idir,ifnm,".face");
+
+	printf("Reading: %s\n",ffnm);
+
+	if ((ffil = fopen(ffnm,"r"))==NULL)
+	{
+		printf("cannot open: %s\n",ffnm);
+		exit(1);
+	}
+	
+	srt = fscanf(ffil,"%d %d",&nface,&bif);
+	
+	iconf = (int *)malloc(sizeof(int)*kf*nface);
+	bdflagf = (int *)malloc(sizeof(int)*nface);
+
+	for (n=0;n<nface;n++)
+	{
+		srt = fscanf(ffil,"%*d %d %d %d",&iconf[(n*kf)],&iconf[(n*kf)+1],&iconf[(n*kf)+2]);
+		if (bif==1)
+		{
+			srt = fscanf(ffil," %d\n",&bdflagf[n]);
+		}
+	}
+	fclose(ffil);
 	return;
 }
 
