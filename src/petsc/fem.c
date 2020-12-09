@@ -16,8 +16,8 @@ int main (int nargin, char *argsin[])
 {
 
 	soltype = 1; // just some boolean which change the problem type
-	readmesh(meshselect(nargin,argsin),"../../data/3d/");
-	//readmesh(meshselect(nargin,argsin),"../../data/3d/region/innersmall/");
+	//readmesh(meshselect(nargin,argsin),"../../data/3d/");
+	readmesh(meshselect(nargin,argsin),"../../data/3d/region/innersmall/");
 	//readvtk("inner","../../data/grummp/");
 	//readvtk("test3d","../../data/grummp/");
 

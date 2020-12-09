@@ -3,7 +3,7 @@
 void chkinterior(double *,int *);
 void readnode();
 void readele();
-void readface(int *,int *);
+//int readface(int **,int **);
 
 void readmesh(fnm,fdir)
 char fnm[50];
@@ -25,9 +25,6 @@ char fdir[50];
 
         readnode();
 	readele();
-
-	int *iconf,*bdff;
-	readface(iconf,bdff);
 
 	nintr = 0; // Number of non-boundary nodes
 	for (node=0;node<msh.nnode;node++)
@@ -155,14 +152,14 @@ void readele( )
 	return;
 }
 
-void readface(iconf,bdflagf)
+int readface(iconf,bdflagf)
 // Read .face file
-int *iconf,*bdflagf;
+int **iconf,**bdflagf;
 {
 	FILE *ffil;
 	char ffnm[100];
 	int srt;
-	int n,nf,bif,nface;
+	int n,i,nf,bif,nface;
 	int kf = msh.knode-1;
 	
 	snprintf(ffnm,sizeof(ffnm),"%s%s%s",idir,ifnm,".face");
@@ -176,20 +173,27 @@ int *iconf,*bdflagf;
 	}
 	
 	srt = fscanf(ffil,"%d %d",&nface,&bif);
+	//printf("nface = %d\n",nface);
 	
-	iconf = (int *)malloc(sizeof(int)*kf*nface);
-	bdflagf = (int *)malloc(sizeof(int)*nface);
+	*iconf = (int *)malloc(sizeof(int)*kf*nface);
+	*bdflagf = (int *)malloc(sizeof(int)*nface);
 
 	for (n=0;n<nface;n++)
 	{
-		srt = fscanf(ffil,"%*d %d %d %d",&iconf[(n*kf)],&iconf[(n*kf)+1],&iconf[(n*kf)+2]);
+		srt = fscanf(ffil,"%*d %d %d %d",&(*iconf)[(n*kf)],&(*iconf)[(n*kf)+1],&(*iconf)[(n*kf)+2]);
 		if (bif==1)
 		{
-			srt = fscanf(ffil," %d\n",&bdflagf[n]);
+			srt = fscanf(ffil," %d\n",&(*bdflagf)[n]);
+			//printf("bdflagf[%d] = %d\n",n,(*bdflagf)[n]);
+		}
+		// reducing the index
+		for (i=0;i<kf;i++)
+		{
+			(*iconf)[(n*kf)+i]--;
 		}
 	}
 	fclose(ffil);
-	return;
+	return nface;
 }
 
 void chkinterior(s,bd)

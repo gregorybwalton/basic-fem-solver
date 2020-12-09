@@ -12,8 +12,7 @@ LDLIBS=-lm -w\
 	-lpetsc
 OBJS=fem.c\
 	../readtetgen.c ../output.c ../calcerror.c ../addfunc.c ../listtool.c ../d3n4.c \
-	psolve.c \
-	./proto/meshvolume.c
+	psolve.c meshvolume.c
 	#./proto/meshlengthscale.c 
 
 all: main
