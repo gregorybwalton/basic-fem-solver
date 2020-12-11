@@ -7,6 +7,8 @@ void listadd(list_node *,int,double);
 double regscaling(int);
 void printvec(double *,int);
 
+struct sysmat spstiff;
+
 void d3n4(void)
 // Function for calculating the global matrices and vector
 // Only works for 3-dimensional 4 noded tetra elements
@@ -216,10 +218,7 @@ int genspstruct(list_node **arrlist, int *icon,int *nnz, int *bdflag, int nel, i
 }
 
 
-void listadd(curr,n,k)
-list_node *curr;
-int n;
-double k;
+void listadd(list_node* curr,int n,double k)
 // Add an scalar to an element of the linked list
 // Used for adding the local stiffness element to global sparse matrix
 {
@@ -232,9 +231,8 @@ double k;
 }
 
 
-double regscaling(region)
+double regscaling(int region)
 // Scaling the local stiffness matrix
-int region;
 {
 	double k;
 	//double scal = 1.0e-1; // set the stiffness scaling factor here
@@ -253,12 +251,9 @@ int region;
 	exit(0);
 }
 
-void findregscaling(scal,s,icon,nel,knode,dim)
+void findregscaling(double* scal,double* s,int* icon,int nel,int knode,int dim)
 // Finds the regions to scale
 // Redundant since the mesher is returning the subregions
-double *scal,*s;
-int *icon;
-int nel,knode,dim;
 {
 	double *sloc;
 	sloc = (double *) calloc(knode*dim,sizeof(double));
@@ -294,9 +289,7 @@ int nel,knode,dim;
 	free(sloc);
 }
 
-void printvec(vec,nt)
-double *vec;
-int nt;
+void printvec(double* vec,int nt)
 {
 	int i;
 	for (i=0;i<nt;i++)

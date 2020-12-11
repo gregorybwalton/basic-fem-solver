@@ -14,6 +14,7 @@ struct mesh
 	double *s;
 	int *bdflag;
 	int *region;
+	double *lscon; // lengthscale constraint
 };
 
 typedef struct node list_node; // define list structure as 'list_node'
@@ -40,20 +41,20 @@ struct gauss
 };
 
 
-struct mesh msh;
-struct sysmat spstiff;
-int soltype; // define the soltype
-char sfnm[50]; // save file name
-char ifnm[50]; // input file name
-char idir[50]; // input file directory
+extern struct mesh msh;
+extern struct sysmat spstiff;
+extern int soltype; // define the soltype
+extern char sfnm[50]; // save file name
+extern char ifnm[50]; // input file name
+extern char idir[50]; // input file directory
 //double *stiff, *load, *sol;
-int nels,*icontmp;
+extern int nels,*icontmp;
 
 // Define global functions here
-double phiFunc(double,double,double);
-double det3(double,double,double,double,double,double,double,double,double);
-double loadFunc(double,double,double);
-char *savename(void);
-void printlist(list_node **,int,int);
-void writelist(list_node **,int,int,char *);
-void listdel(list_node **,int);
+extern double phiFunc(double,double,double);
+extern double det3(double,double,double,double,double,double,double,double,double);
+extern double loadFunc(double,double,double);
+extern char *savename(void);
+extern void printlist(list_node **,int,int);
+extern void writelist(list_node **,int,int,char *);
+extern void listdel(list_node **,int);

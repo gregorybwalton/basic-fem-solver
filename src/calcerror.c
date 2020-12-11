@@ -2,9 +2,7 @@
 
 void erroroutput(double,double *);
 
-double calcerror(u,pidx)
-double *u;
-int pidx;
+double calcerror(double* u,int pidx)
 {
 	printf("Calculating the error...\n");
 	int nnode = msh.nnode;

@@ -55,10 +55,7 @@ struct gauss preGauss(void)
 }
 
 
-double calcGauss(s,node,gaussvals)
-double *s;
-int node;
-struct gauss gaussvals;
+double calcGauss(double* s,int node,struct gauss gaussvals)
 {
         int i;
         double detJ, csp;
@@ -113,8 +110,7 @@ struct gauss gaussvals;
         return F;
 }
 
-double det3(a11,a12,a13,a21,a22,a23,a31,a32,a33)
-double a11,a12,a13,a21,a22,a23,a31,a32,a33;
+double det3(double a11,double a12,double a13,double a21,double a22,double a23,double a31,double a32,double a33)
 {
 // Calculate the determinate of 3 x 3 matrix
         double det = a11*(a22*a33-a32*a23)\
@@ -124,8 +120,7 @@ double a11,a12,a13,a21,a22,a23,a31,a32,a33;
         return det;
 }
 
-double phiFunc(x,y,z)
-double x,y,z;
+double phiFunc(double x,double y,double z)
 {
 // Define solution function for the boundary
         double phi;
@@ -146,8 +141,7 @@ double x,y,z;
         return phi;
 }
 
-double loadFunc(x,y,z)
-double x,y,z;
+double loadFunc(double x,double y,double z)
 {
 // Define the loading function
         double f;

@@ -1,5 +1,7 @@
 #include "fem.h"
 
+char sfnm[50];
+
 char *savename(void)
 {
 	char tfnm[50];
@@ -18,8 +20,7 @@ char *savename(void)
 	return sptr;
 }
 
-void resoutput(res)
-double *res;
+void resoutput(double* res)
 {
         int nnode = msh.nnode;
         //double **s = msh.s;
@@ -43,9 +44,7 @@ double *res;
         fclose(resfil);
 }
 
-void erroroutput(nerror,error)
-double nerror;
-double *error;
+void erroroutput(double nerror,double* error)
 {
         int nnode = msh.nnode;
         double *s = msh.s;
@@ -69,8 +68,7 @@ double *error;
 }
       
 
-void vtkoutput(res)
-double *res;
+void vtkoutput(double* res)
 {
         int nnode = msh.nnode;
         int nel = msh.nel;

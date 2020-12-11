@@ -2,10 +2,8 @@
 
 void chkinterior(double *,int *);
 
-void readvtk(fnm,fdir)
+void readvtk(char* fnm,char* fdir)
 // VTK files from GRUMMP
-char fnm[50];
-char fdir[50];
 {
         char nfnm[100];
 	char buf[100];
@@ -13,9 +11,8 @@ char fdir[50];
 	int i,n,node,el,nei;
 	int nnode,nele,knode,nint,dim;
 	int verttyp,knmin;
-	int srt;
-	double *lensc;
-	int *ctyp;
+	int srt,nels;
+	int *ctyp,*icontmp;
 	
 	printf("\n--------------------\n");
 	printf("Reading in mesh...\n");
@@ -45,7 +42,7 @@ char fdir[50];
 	msh.dim = dim;
 	msh.s = (double *)malloc(sizeof(double)*nnode*dim);
 	msh.bdflag = (int *)malloc(sizeof(int)*nnode);
-        lensc = (double *)malloc(sizeof(double)*nnode);
+        msh.lscon = (double *)malloc(sizeof(double)*nnode);
 	ctyp = (int *)malloc(sizeof(int)*nnode);
 	for (node=0;node<nnode;node++)
         {
@@ -124,7 +121,8 @@ char fdir[50];
         }
         for (node=0;node<nnode;node++)
         {
-		srt = fscanf(fil,"%lf\n",&lensc[node]);
+		srt = fscanf(fil,"%lf\n",&msh.lscon[node]);
+		//printf("lengthscale[%d] = %.5e\n",node,msh.lscon[node]);
 	}
 
 	// Cell type - is this regions?

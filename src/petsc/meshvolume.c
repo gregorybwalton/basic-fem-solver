@@ -1,27 +1,28 @@
 #include "petsc.h"
 
-void writevols(double *);
-void halfrefinement(double *,int *);
-
+void calcvol(double *);
+void halfrefinevol(double *);
+void internalrefinevol(double *);
 int readface(int **,int **);
+void writevols(double *);
 
 void meshvolume( )
 {
-	double *volmax = (double *)calloc(msh.nel,sizeof(double));
+	// do I really need vol and lscon, can I just one and rewrite
 	double *vol = (double *)calloc(msh.nel,sizeof(double));
+	msh.lscon = (double *)calloc(msh.nel,sizeof(double));
 
 	printf("RUNNING MESH REFINEMENT\n");
 
 	calcvol(vol);
-	//halfrefinement(volmax,vol);
-	internalrefinement(volmax,vol);
+	//halfrefinevol(vol);
+	internalrefinevol(vol);
 
-	writevols(volmax);
+	writevols(msh.lscon);
 	return;
 }
 
-void calcvol(vol)
-double *vol;
+void calcvol(double* vol)
 {
 	int el,n,i;
 	int knode = msh.knode;
@@ -48,10 +49,9 @@ double *vol;
 	return;
 }
 
-void internalrefinement(volmax,vol)
+void internalrefinevol(double* vol)
 // Refinement given the distance to an interior boundary
 // requires a .face file
-double *volmax,*vol;
 {
 	int el,i,j,n;
 	int knode = msh.knode;
@@ -60,6 +60,7 @@ double *volmax,*vol;
 	double *cent;
 	double r,*rmin;
 	double p;
+	
 
 	cent = (double *)calloc(dim,sizeof(double));
 	rmin = (double *)calloc(nel,sizeof(double));
@@ -124,12 +125,11 @@ double *volmax,*vol;
 			}
 		}
 		//printf("rmin[%d] = %.10e\n",el,rmin[el]);
-		volmax[el] = rmin[el]*vol[el];
+		msh.lscon[el] = rmin[el]*vol[el];
 	}
 }
 
-void halfrefinement(volmax,vol)
-double *volmax,*vol;
+void halfrefinevol(double* vol)
 {
 	int el,n;
 	int knode = msh.knode;
@@ -148,18 +148,17 @@ double *volmax,*vol;
 		//printf("xcent[%d] = %.5f\n",el,xcent);
 		if (xcent<0.5)
 		{
-			volmax[el] = kappa*vol[el];
+			msh.lscon[el] = kappa*vol[el];
 		}
 		else
 		{
-			volmax[el] = vol[el]; // neg means uncontrained
+			msh.lscon[el] = vol[el]; // neg means uncontrained
 		}
 	}
 	return;
 }
 
-void writevols(volmax)
-double *volmax;
+void writevols(double* volmax)
 {
 	FILE *fil;
 	int el;

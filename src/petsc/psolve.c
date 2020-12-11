@@ -5,11 +5,7 @@ void writeres(char *,int,double,int,double,double);
 double calcerror(double *,int);
 double droptolselect(int,char **);
 
-void ptsolve(argc,argv,help,wbin)
-int *argc;
-char ***argv;
-char *help;
-bool wbin;
+void ptsolve(int* argc,char*** argv,char* help,bool wbin)
 {
 	//int nz = spstiff.nzeros;
 	int *nnz = spstiff.nnzeros;
@@ -246,9 +242,7 @@ bool wbin;
 	return;
 }
 
-PetscErrorCode writebin(A,x,b)
-Mat *A;
-Vec *x,*b;
+PetscErrorCode writebin(Mat* A,Vec* x,Vec* b)
 {
 	PetscViewer vout;
 	PetscErrorCode ierr;
@@ -266,10 +260,7 @@ Vec *x,*b;
 	return ierr;
 }
 
-void writeres(wfil,ukn,norm,its,timet,mem)
-char wfil[50];
-int ukn,its;
-double norm,timet,mem;
+void writeres(char* wfil,int ukn,double norm,int its,double timet,double mem)
 {
 	FILE *fp;
 	if (access(wfil,W_OK) != -1)
@@ -280,10 +271,8 @@ double norm,timet,mem;
 	}
 }
 
-double droptolselect(argc,argv)
+double droptolselect(int argc,char** argv)
 // checks input for "-droptol"
-int argc;
-char** argv;
 {
 	int i;
 	for (i=0;i<argc;i++)

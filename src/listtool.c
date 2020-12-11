@@ -27,10 +27,7 @@ void printlist(list_node **list, int nnode, int swh)
         }
 }
 
-void writelist(list,nnz,nnode,lfnm)
-list_node **list;
-int nnode, nnz;
-char lfnm[50];
+void writelist(list_node** list,int nnz,int nnode,char* lfnm)
 {
 
         int node;
@@ -57,9 +54,7 @@ char lfnm[50];
 }
 
 
-void listdel(list,n)
-list_node **list;
-int n;
+void listdel(list_node** list,int n)
 {
 	list_node *curr, *prev;
 
@@ -83,10 +78,9 @@ int n;
 	}
 }
 
-void listtrans(spstiff)
+void listtrans(struct sysmat spstiff)
 // Transpose a linked list
 // NOT TESTED
-struct sysmat spstiff;
 {
         int nt = msh.neq;
         list_node **list = spstiff.head;
@@ -102,11 +96,9 @@ struct sysmat spstiff;
 
 }
 
-double listget(curr,n)
+double listget(list_node* curr,int n)
 // Get value from the linked list
 // NOT TESTED
-list_node *curr;
-int n;
 {
 	while (curr->na != n)
 	{
