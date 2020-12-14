@@ -4,6 +4,7 @@ TETGEN_DIR=/home/cserv1_a/soc_pg/scgwa/not-backed-up/phd/fem-codes/fem-working/e
 
 #CC=mpicc
 CC=mpic++
+#CC=g++
 PI=-I${PETSC_DIR}/${PETSC_ARCH}/include
 PLD=-L${PETSC_DIR}/${PETSC_ARCH}/lib
 TI=-I${TETGEN_DIR}
@@ -17,7 +18,7 @@ OBJC=fem.c\
 	../readtetgen.c ../output.c ../calcerror.c ../addfunc.c ../listtool.c ../d3n4.c \
 	psolve.c meshvolume.c ../readgrummp.c
 	#./proto/meshlengthscale.c
-OBJCX=./proto/runtetgen.cxx
+OBJCX= ./proto/runtetgen.cxx
 
 all: main
 
@@ -28,7 +29,9 @@ objc = $(patsubst %.c,%.o,$(OBJC))
 objcx = $(patsubst %.cxx,%.o,$(OBJCX))
 
 main:	$(objc) $(objcx)
-	$(CC) $(INCLUDE) $(LDFLAGS) $(LDLIBS) -o fem $(objc) $(objcx)
+#main:	$(objc)
+	$(CC) -o fem $(objc) $(objcx) $(INCLUDE) $(LDFLAGS) $(LDLIBS)
+#	$(CC) -o fem $(objc) $(INCLUDE) $(LDFLAGS) $(LDLIBS)
 $(objc):	%.o:%.c
 		$(CC) -c $(INCLUDE) $(LDFLAGS) $(LDLIBS) $< -o $@
 $(objcx):	%.o:%.cxx

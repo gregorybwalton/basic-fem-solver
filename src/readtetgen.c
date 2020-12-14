@@ -123,7 +123,14 @@ void readele( )
 	msh.nel = nele;
 	msh.knode = knode;
 	msh.icon = (int *)malloc(sizeof(int)*nele*knode);
-	msh.region = (int *)malloc(sizeof(int)*nele);
+	if (nreg == 0)
+	{
+		msh.region = (int *)NULL;
+	}
+	else if (nreg == 1)
+	{
+		msh.region = (int *)malloc(sizeof(int)*nele);
+	}
 
 	for (el=0;el<nele;el++)
 	{
@@ -140,10 +147,6 @@ void readele( )
 		if (nreg == 1)
 		{
 			srt = fscanf(efil," %d",&msh.region[el]);
-		}
-		else
-		{
-			msh.region[el] = 0;
 		}
 		//printf("reg[%d] = %d\n",el,msh.region[el]);
 		srt = fscanf(efil,"\n");

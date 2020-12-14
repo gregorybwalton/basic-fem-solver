@@ -10,27 +10,32 @@ void resoutput(double *);
 void d3n4(void);
 void ptsolve(int *,char ***,char *,bool);
 char* meshselect(int,char **);
-
 void meshvolume();
+
+void runtetgen();
+void runtetgenexample();
 
 int main (int nargin, char *argsin[])
 {
 
 	soltype = 1; // just some boolean which change the problem type
 	//readmesh(meshselect(nargin,argsin),"../../data/3d/");
-	//readmesh(meshselect(nargin,argsin),"../../data/3d/region/innersmall/");
-	readvtk("test3d","../../data/grummp/");
+	readmesh(meshselect(nargin,argsin),"../../data/3d/region/innersmall/");
+	//readvtk("test3d","../../data/grummp/");
 	//readvtk("inner","../../data/grummp/");
 
 	d3n4(); // generates the matrices in spare form
 	ptsolve(&nargin,&argsin,helpstr,false); // Solve sparse matrix using PETSc, working in serial
 
 	// Adaptivity bit
-	//meshvolume(); // TetGen refinement
+	meshvolume(); // TetGen refinement
 	//meshlengthscale(); // GRUMMP refinement
 
 	vtkoutput(spstiff.sol);
 	//resoutput(spstiff.sol);
+
+	//runtetgenexample();
+	runtetgen();
 	
 	return 0;
 }

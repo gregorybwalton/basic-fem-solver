@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <unistd.h>
 
+#include "tetgen.h"
+
 // Define global variables here
 struct mesh
 {

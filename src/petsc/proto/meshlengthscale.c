@@ -1,77 +1,78 @@
 #include "../petsc.h"
 
+
 void writels(double *);
-void internalrefinement(double *,int *);
-void halfrefinement(double *,int *);
+void internalrefinels(double *,int *);
+void halfrefinels(double *,int *);
 
 void meshlengthscale( )
 {
-	double *rmin = (double *)calloc(msh.nnode,sizeof(double));
-
 	//int *icon = icontmp;
 	//internalrefinement(rmin,icon);
 
-	halfrefinement(rmin,msh.icon);
+	halfrefinels(msh.lscon,msh.icon);
 
-	writels(rmin);
+	writels(msh.lscon);
 	return;
 }
 
-void internalrefinement(double *rmin,int *icon)
+void internalrefinels( )
 {
 	int i,j,m,n;
 	int iel,jel;
 	int knode = msh.knode;
+	int nel = msh.nel;
 	double r;
 	
-	for (iel=0;iel<msh.nel;iel++)
+	double *rmin = (double *)calloc(msh.nnode,sizeof(double));
+	
+	for (iel=0;iel<nel;iel++)
 	{
 		for (n=0;n<knode;n++)
 		{
-			if (rmin[icon[iel*knode+n]]==0.0)
-			{
-				rmin[icon[iel*knode+n]] = 100.0;
-			}
+			rmin[msh.icon[iel*knode+n]] = 100.0;
 			//printf("mesh.nel=%d, nels=%d\n",msh.nel,nels);
-			for (jel=msh.nel;jel<nels;jel++)
+			for (jel=nel;jel<nels;jel++)
 			{
 				for (m=0;m<3;m++)
 				{
 					r = 0.0;
 					for (i=0;i<3;i++)
 					{
-						r += pow(msh.s[icon[iel*knode+n]+i]-msh.s[icon[jel*3+m]+i],2);
+						r += pow(msh.s[msh.icon[iel*knode+n]+i]-msh.s[msh.icon[jel*3+m]+i],2);
 					}
 					r = pow(r,0.5);
-					if ((r < rmin[icon[iel*knode+n]]) && r != 0.0)
+					if ((r < rmin[msh.icon[iel*knode+n]]) && r != 0.0)
 					{
-						rmin[icon[iel*knode+n]] = r*r*r;
+						rmin[msh.icon[iel*knode+n]] = r*r;
 					}
 				}
 			}
 			//printf("r[%d] = %.5f\n",iel*4+n,rmin[iel*4+n]);
+			msh.lscon[msh.icon[iel*knode+n]] *= rmin[msh.icon[iel*knode+n]];
 		}
 	}
 	return;
 }
 
-void halfrefinement(double *rmin,int *icon)
+void halfrefinels( )
 {
 	int el,n;
 	int knode = msh.knode;
+	int nel = msh.nel;
 
-	for (el=0;el<msh.nel;el++)
+	for (el=0;el<nel;el++)
 	{
 		for (n=0;n<knode;n++)
 		{
-			if (msh.s[icon[el*knode+n]]<0.5)
+			if (msh.s[msh.icon[el*knode+n]]<0.5)
 			{
-				rmin[icon[el*knode+n]] = 1.e-2;
+				msh.lscon[msh.icon[el*knode+n]] *= 1.0e-1;
 			}
-			else
-			{
-				rmin[icon[el*knode+n]] = 1.e-1;
-			}
+			//else
+			//{
+			//	rmin[icon[el*knode+n]] = 1.e-1;
+			//}
 		}
 	}
 	return;
