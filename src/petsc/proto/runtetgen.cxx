@@ -177,27 +177,10 @@ void interpsol(tetgenio &out)
 				//printf("pk[%d] = [%.5f %.5f %.5f];\n",i,*ik[i],*(ik[i]+1),*(ik[i]+2));
 				vk = volume(ik[0],ik[1],ik[2],ik[3]);
 				beta[i] = vk/v;
-				// dodgy rounding - round to 10 d.p. since the vtk is to 6 d.p
+				// dodgy rounding - round to 10 d.p since the vtk is to 6 d.p
+				// there was an issue with indentifying the sign of beta
 				double tmp = (long int)(beta[i]*1e10 + .5);
 				beta[i] = tmp / 1e10;
-
-				//printf("beta[%d] = %.5f\n",i,beta[i]);
-				//if (fabs(beta[i]) < 1.e-5 && beta[i]!=0.0) printf("beta[%d] = %.5e\n",i,beta[i]);
-				/*
-				if ((fabs(out.pointlist[n*dim]-0.65)<1.e-6 && fabs(out.pointlist[n*dim+1]-0.35)<1.e-6 && fabs(out.pointlist[n*dim+2]-0.4625)<1.e-6) && i==(knode-1))
-				if ((fabs(out.pointlist[n*dim]-0.65)<1.e-6 && fabs(out.pointlist[n*dim+1]-0.545878)<1.e-6 && fabs(out.pointlist[n*dim+2]-0.610504)<1.e-6 && fabs(msh.s[msh.icon[knode*el]*dim]-0.65)<1.e-6))
-				{
-					//printf("[%.5f %.5f %.5f]\n",out.pointlist[n*dim],out.pointlist[n*dim+1],out.pointlist[n*dim+2]);
-					printf("	beta[%d] = %.5e\n",i,beta[i]);
-					printf("pk[%d] = [%.5f %.5f %.5f];\n",i,*ik[i],*(ik[i]+1),*(ik[i]+2));
-					printf("p =\n");
-					printf("[%.5f %.5f %.5f;\n",msh.s[msh.icon[knode*el]*dim],msh.s[msh.icon[knode*el]*dim+1],msh.s[msh.icon[knode*el]*dim+2]);
-					printf("%.5f %.5f %.5f;\n",msh.s[msh.icon[knode*el+1]*dim],msh.s[msh.icon[knode*el+1]*dim+1],msh.s[msh.icon[knode*el+1]*dim+2]);
-					printf("%.5f %.5f %.5f;\n",msh.s[msh.icon[knode*el+2]*dim],msh.s[msh.icon[knode*el+2]*dim+1],msh.s[msh.icon[knode*el+2]*dim+2]);
-					printf("%.5f %.5f %.5f];\n",msh.s[msh.icon[knode*el+3]*dim],msh.s[msh.icon[knode*el+3]*dim+1],msh.s[msh.icon[knode*el+3]*dim+2]);
-				}
-				*/
-				//if (fabs(beta[i]) < 1.e-10 && beta[i] != 0.0) printf("beta[%d] = %.5e\n",i,beta[i]);
 
 				if (beta[i] < 0.0)
 				{
