@@ -12,7 +12,7 @@ void meshvolume( )
 	double *vol = (double *)calloc(msh.nel,sizeof(double));
 	msh.lscon = (double *)calloc(msh.nel,sizeof(double));
 
-	printf("RUNNING MESH REFINEMENT\n");
+	printf("Running mesh refinement\n");
 
 	calcvol(vol);
 	//halfrefinevol(vol);
@@ -119,8 +119,8 @@ void internalrefinevol(double* vol)
 						r += pow(cent[j] - p,2.0);
 					}
 					//printf("\n");
-					//r = pow(r,0.5); // just for a square					
-					if ((r<rmin[el]) && (r!=0.0)) rmin[el] = r;
+					if ((r<rmin[el]) && (r!=0.0)) rmin[el] = pow(r,0.5);
+					//if ((r<rmin[el]) && (r!=0.0)) rmin[el] = r;
 				}	
 			}
 		}

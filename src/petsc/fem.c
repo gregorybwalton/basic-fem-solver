@@ -13,7 +13,6 @@ char* meshselect(int,char **);
 void meshvolume();
 
 void runtetgen();
-void runtetgenexample();
 
 int main (int nargin, char *argsin[])
 {
@@ -27,16 +26,16 @@ int main (int nargin, char *argsin[])
 	d3n4(); // generates the matrices in spare form
 	ptsolve(&nargin,&argsin,helpstr,false); // Solve sparse matrix using PETSc, working in serial
 
-	// Adaptivity bit
-	meshvolume(); // TetGen refinement
-	//meshlengthscale(); // GRUMMP refinement
-
-	vtkoutput(spstiff.sol);
+	//vtkoutput(spstiff.sol);
 	//resoutput(spstiff.sol);
 
-	//runtetgenexample();
-	runtetgen();
-	
+	// Adaptivity bit
+	meshvolume(); // Calculting the volume requirement
+	//meshlengthscale(); // GRUMMP refinement
+	runtetgen(); // Running TetGen from code
+	vtkoutput(spstiff.sol);
+
+	//free(msh.icon); free(msh.s); free(msh.bdflag); free(msh.region); free(msh.lscon);
 	return 0;
 }
 

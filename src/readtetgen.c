@@ -35,8 +35,7 @@ void readmesh(char* fnm,char* fdir)
         	if (msh.bdflag[node]==0)
 		{
 			// interior
-                	msh.bdflag[node] = nintr;
-			nintr++;
+                	msh.bdflag[node] = nintr++; // should be post increment
 	        }
 	        else if (msh.bdflag[node]==1)
 		{

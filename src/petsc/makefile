@@ -11,8 +11,8 @@ TI=-I${TETGEN_DIR}
 TLD=-L${TETGEN_DIR}
 INCLUDE=$(PI) $(TI)
 LDFLAGS=$(PLD) $(TLD)
-#LDLIBS=-lm -ggdb
-LDLIBS=-lm -w \
+#LDLIBS=-lm -w -ggdb
+LDLIBS=-lm -w -ggdb\
 	-lpetsc -ltet
 OBJC=fem.c\
 	../readtetgen.c ../output.c ../calcerror.c ../addfunc.c ../listtool.c ../d3n4.c \
