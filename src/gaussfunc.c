@@ -56,6 +56,7 @@ struct gauss preGauss(void)
 
 
 double calcGauss(double* s,int node,struct gauss gaussvals)
+// Gaussian integration, used for computing the RHS
 {
         int i;
         double detJ, csp;

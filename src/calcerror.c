@@ -27,7 +27,7 @@ double calcerror(double* u,int pidx)
 	}
 	//nabse = sqrt(nabse)/nnode;
 	nabse = sqrt(nabse);
-	printf("||Error|| = %.15f\n",nabse/nnode);
+	printf("||Error|| = %.15e\n",nabse/nnode);
 
 	if (pidx == 1)
 	{

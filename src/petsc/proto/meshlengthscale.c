@@ -1,5 +1,6 @@
 #include "../petsc.h"
 
+// mesh length scales for use with GRUMMP
 
 void writels(double *);
 void internalrefinels(double *,int *);

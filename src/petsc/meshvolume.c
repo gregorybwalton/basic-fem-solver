@@ -18,7 +18,7 @@ void meshvolume( )
 	//halfrefinevol(vol);
 	internalrefinevol(vol);
 
-	writevols(msh.lscon);
+	//writevols(msh.lscon);
 	return;
 }
 
@@ -46,6 +46,7 @@ void calcvol(double* vol)
 		//printf("vol[%d] = %.5e\n",el,vol[el]);
 	}
 
+	free(a);
 	return;
 }
 

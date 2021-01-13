@@ -15,10 +15,10 @@ LDFLAGS=$(PLD) $(TLD)
 LDLIBS=-lm -w -ggdb\
 	-lpetsc -ltet
 OBJC=fem.c\
-	../readtetgen.c ../output.c ../calcerror.c ../addfunc.c ../listtool.c ../d3n4.c \
-	psolve.c meshvolume.c ../readgrummp.c
-	#./proto/meshlengthscale.c
-OBJCX= ./proto/runtetgen.cxx
+	../readtetgen.c ../output.c ../calcerror.c ../gaussfunc.c ../listtool.c ../d3n4.c \
+	psolve.c meshvolume.c ../readgrummp.c \
+	./proto/calcmass.c ./proto/movemesh.c
+OBJCX= ./runtetgen.cxx
 
 all: main
 

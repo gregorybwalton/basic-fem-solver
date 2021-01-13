@@ -1,17 +1,20 @@
-#include "../../fem.h"
-//#include "tetgen.h"
+#include "../fem.h"
 
 void inputmsh(tetgenio &);
 void outputmsh(tetgenio &);
 void interpsol(tetgenio &);
 double volume(double *,double *,double *,double *);
+double calcmass();
 
 void runtetgen()
 {
 	printf("\nTETGEN: runtetgen\n");
 	tetgenio in,out;
-	//char switches[50] = "rkqaO0"; // switches being used in refinement
+	in.firstnumber = 0; // first index is 0
 	tetgenbehavior switches;
+
+	// define switches
+	//char switches[50] = "rkqaO0"; // switches being used in refinement
 	switches.refine = 1; // -r, refines
 	switches.vtkview = 0; // -k, outputs vtks, this doesn't seem to do anything
 	switches.quality = 1; // -q, quality
@@ -21,16 +24,21 @@ void runtetgen()
 	switches.opt_max_flip_level = 0;
 	switches.quiet =  1; // supresses terminal output, except errors
 
-	in.firstnumber = 0;
-	inputmsh(in);
+	double totalm1 = calcmass();
+
+	inputmsh(in); // converts to tetgen mesh format
 	
 	// addin, -i, additional vertices
 	// bgmin, -m, constraint functions
 	tetrahedralize(&switches,&in,&out);
 	
 	//out.save_nodes("example_refine");
-	interpsol(out);
-	outputmsh(out);
+	interpsol(out); // interpolates the solution onto the new mesh
+	outputmsh(out); // outputs the mesh to required format (does not save)
+
+        double totalm2 = calcmass();
+        double percentdm = ((totalm1 - totalm2)/totalm1)*100.0;
+        printf("Change in total mass = %.5f %\n",percentdm);
 
 	void deinitialize();
 	return;
@@ -179,10 +187,11 @@ void interpsol(tetgenio &out)
 				beta[i] = vk/v;
 				// dodgy rounding - round to 10 d.p since the vtk is to 6 d.p
 				// there was an issue with indentifying the sign of beta
-				double tmp = (long int)(beta[i]*1e10 + .5);
-				beta[i] = tmp / 1e10;
+				//double tmp = (long int)(beta[i]*1e10 + .5);
+				//beta[i] = tmp / 1e10;
 
-				if (beta[i] < 0.0)
+				// checks sign and magnitude
+				if (beta[i] < 0.0 && fabs(beta[i]) > 1.e-10)
 				{
 					inck = 0;
 					break;
@@ -195,7 +204,7 @@ void interpsol(tetgenio &out)
 				// interpolation based upon volume ratio
 				for (i=0;i<knode;i++)
 				{
-					newu[n] += beta[i]*spstiff.sol[msh.icon[knode*el+i]];
+					newu[n] += fabs(beta[i])*spstiff.sol[msh.icon[knode*el+i]];
 				}
 				count++;
 				//if (count==5) printf("	newu[%d] = %.5f\n",n,newu[n]);
@@ -213,6 +222,8 @@ void interpsol(tetgenio &out)
 }
 
 double volume(double *a11,double *a21,double *a31,double *a41)
+// this volume function uses points for the each node point
+// then increments for each component
 {
 	double vol;
 

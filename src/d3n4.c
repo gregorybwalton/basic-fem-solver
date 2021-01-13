@@ -218,19 +218,6 @@ int genspstruct(list_node **arrlist, int *icon,int *nnz, int *bdflag, int nel, i
 }
 
 
-void listadd(list_node* curr,int n,double k)
-// Add an scalar to an element of the linked list
-// Used for adding the local stiffness element to global sparse matrix
-{
-        while (curr->na != n)
-        {
-                curr = curr->next;
-        }
-
-        curr->val += k;
-}
-
-
 double regscaling(int region)
 // Scaling the local stiffness matrix
 {

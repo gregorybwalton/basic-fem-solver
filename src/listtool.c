@@ -53,6 +53,17 @@ void writelist(list_node** list,int nnz,int nnode,char* lfnm)
 
 }
 
+void listadd(list_node* curr,int n,double k)
+// Add an scalar to an element of the linked list
+// Used for adding the local stiffness element to global sparse matrix
+{
+        while (curr->na != n)
+        {
+                curr = curr->next;
+        }
+
+        curr->val += k;
+}
 
 void listdel(list_node** list,int n)
 {
