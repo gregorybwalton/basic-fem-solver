@@ -43,8 +43,8 @@ void writelist(list_node** list,int nnz,int nnode,char* lfnm)
 
                 while (curr != NULL)
                 {
-                        fprintf(fl,"%d %d ",node+1,curr->na+1);
-                        fprintf(fl,"%.15f\n",curr->val);
+                        fprintf(fl,"%d %d ",node,curr->na);
+                        fprintf(fl,"%.5e\n",curr->val);
                         curr = curr->next;
                 }
         }
@@ -66,6 +66,8 @@ void listadd(list_node* curr,int n,double k)
 }
 
 void listdel(list_node** list,int n)
+// deletes a specific item from the list
+// indentify that node with n
 {
 	list_node *curr, *prev;
 
@@ -87,6 +89,35 @@ void listdel(list_node** list,int n)
 			return;
 		}
 	}
+}
+
+void listarrayfree(list_node **list,int neq)
+// free entire list array
+// not tested
+{
+	int i;
+
+	for (i=0;i<neq;i++)
+	{
+		listfree(list[i]);
+	}
+	//free(list); // probs need to be done outside of function
+	return;
+}
+
+void listfree(list_node *head)
+// free each list in the array
+{
+	int i;
+	list_node *tmp;
+
+	while (head != NULL)
+	{
+		tmp = head->next;
+		free(head);
+		head = tmp;
+	}
+	return;
 }
 
 void listtrans(struct sysmat spstiff)
@@ -120,4 +151,32 @@ double listget(list_node* curr,int n)
 		curr = curr->next;
 	}
 	return curr->val;
+}
+
+list_node** copylist(list_node **head,int nt)
+// copies list to output list
+{
+	list_node **newhead = (list_node **)calloc(nt,sizeof(list_node *));
+	list_node *newcurrent;
+	list_node *current;
+	int ii;
+
+	for (ii=0;ii<nt;ii++)
+	{
+		newhead[ii] = (list_node *)malloc(sizeof(list_node));
+		newhead[ii]->na = head[ii]->na;
+		newhead[ii]->val = head[ii]->na;
+		newhead[ii]->next = NULL;
+		newcurrent = newhead[ii];
+		current = head[ii];
+		
+		while (current->next != NULL)
+		{
+			newcurrent->next = (list_node *)malloc(sizeof(list_node));
+			newcurrent->next->na = current->next->na;
+			newcurrent->next->val = current->next->val;
+			newcurrent->next->next = NULL;
+		}
+	}
+	return newhead;
 }

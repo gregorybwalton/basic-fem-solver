@@ -11,13 +11,15 @@ TI=-I${TETGEN_DIR}
 TLD=-L${TETGEN_DIR}
 INCLUDE=$(PI) $(TI)
 LDFLAGS=$(PLD) $(TLD)
-#LDLIBS=-lm -w -ggdb
-LDLIBS=-lm -w -ggdb\
+#LDLIBS=-lm -w \
+
+#LDLIBS=-lm -w -ggdb \ 
+LDLIBS=-lm -w -ggdb \
 	-lpetsc -ltet
 OBJC=fem.c\
-	../readtetgen.c ../output.c ../calcerror.c ../gaussfunc.c ../listtool.c ../d3n4.c \
-	psolve.c meshvolume.c ../readgrummp.c \
-	./proto/calcmass.c ./proto/movemesh.c
+	../readtetgen.c ../output.c ../writevtk.c ../calcerror.c ../calcvolume.c ../gaussfunc.c ../listtool.c ../d3n4.c ../writetetgen.c \
+	../meshquality.c meshvolumescale.c deformmesh.c calcmass.c\
+	pinit.c psolve.c pfin.c
 OBJCX= ./runtetgen.cxx
 
 all: main
@@ -29,13 +31,11 @@ objc = $(patsubst %.c,%.o,$(OBJC))
 objcx = $(patsubst %.cxx,%.o,$(OBJCX))
 
 main:	$(objc) $(objcx)
-#main:	$(objc)
 	$(CC) -o fem $(objc) $(objcx) $(INCLUDE) $(LDFLAGS) $(LDLIBS)
-#	$(CC) -o fem $(objc) $(INCLUDE) $(LDFLAGS) $(LDLIBS)
 $(objc):	%.o:%.c
 		$(CC) -c $(INCLUDE) $(LDFLAGS) $(LDLIBS) $< -o $@
 $(objcx):	%.o:%.cxx
 		$(CC) -c $(INCLUDE) $(LDFLAGS) $(LDLIBS) $< -o $@
 
 clean::
-	rm fem *.o ../*.o ./proto/*.o
+	rm fem *.o ../*.o ./proto/*.o ./results/*.vtk.*

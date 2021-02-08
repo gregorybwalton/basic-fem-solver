@@ -1,4 +1,4 @@
-#include "../../fem.h"
+#include "../fem.h"
 
 double calcmass(void)
 // calcuting the Me*u for each element and summing

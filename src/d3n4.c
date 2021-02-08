@@ -134,6 +134,8 @@ void d3n4(void)
 			}
 		}
 	}
+	free(gaussvals.w);
+	free(gaussvals.crd);	
 
 	spstiff.sol = sol;
 	spstiff.load = load;
