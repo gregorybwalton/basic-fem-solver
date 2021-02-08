@@ -1,46 +1,67 @@
 #include "../fem.h"
+#include "tetgen.h"
 
+void meshvolumescale();
 void inputmsh(tetgenio &);
-void outputmsh(tetgenio &);
-void interpsol(tetgenio &);
-double volume(double *,double *,double *,double *);
+void outputmsh(tetgenio &,mesh &);
+//void interpsol(tetgenio &);
+void interpsol(double *,int);
 double calcmass();
+void tetfin(tetgenio &);
 
 void runtetgen()
 {
 	printf("\nTETGEN: runtetgen\n");
+	
+	//void initialize();
 	tetgenio in,out;
 	in.firstnumber = 0; // first index is 0
 	tetgenbehavior switches;
 
 	// define switches
-	//char switches[50] = "rkqaO0"; // switches being used in refinement
 	switches.refine = 1; // -r, refines
-	switches.vtkview = 0; // -k, outputs vtks, this doesn't seem to do anything
 	switches.quality = 1; // -q, quality
-	switches.varvolume = 1; // -a, varvolume
-	switches.opt_iterations = 0;
-	switches.opt_scheme = 0;
-	switches.opt_max_flip_level = 0;
-	switches.quiet =  1; // supresses terminal output, except errors
+	//switches.diagnose = 1; // -d, detecting self intersections
+	//switches.coarsen = 1; // -R, coarsen
+	//switches.nobisect = 1; // -Y, supresses boundary facets/segments splitting
+	if (msh.lscon != NULL) switches.varvolume = 1; // -a, varvolume
+	//switches.opt_max_asp_ratio = 50.; // max aspect ratio
+	//switches.opt_iterations = 1; // max number of iterations
+	//switches.opt_scheme = 0; // local mesh operations, 0 to 7
+	//switches.opt_max_flip_level = 0; // max flip level, 0 to 10
+	//switches.minratio = 4.0; // -q, min ratio
+	switches.quiet = 0; // supresses terminal output, except errors
+	switches.verbose = 1; // 0 nothing, max 4
 
 	double totalm1 = calcmass();
 
 	inputmsh(in); // converts to tetgen mesh format
-	
 	// addin, -i, additional vertices
 	// bgmin, -m, constraint functions
 	tetrahedralize(&switches,&in,&out);
-	
-	//out.save_nodes("example_refine");
-	interpsol(out); // interpolates the solution onto the new mesh
-	outputmsh(out); // outputs the mesh to required format (does not save)
+	//out.save_nodes("testout");
+	interpsol(out.pointlist,out.numberofpoints);
+	outputmsh(out,msh);
+	//tetfin(in);
+	void deinitialize(); // don't need tetgen anymore
 
         double totalm2 = calcmass();
         double percentdm = ((totalm1 - totalm2)/totalm1)*100.0;
         printf("Change in total mass = %.5f %\n",percentdm);
 
-	void deinitialize();
+	return;
+}
+
+void tetfin(tetgenio &in)
+{
+	free(in.pointlist);
+	free(in.tetrahedronlist);
+	free(in.pointmarkerlist);
+	if (msh.lscon != NULL) free(in.tetrahedronvolumelist);
+	free(in.trifacelist);
+	free(in.trifacemarkerlist);
+	if (msh.region != NULL) free(in.tetrahedronattributelist);
+
 	return;
 }
 
@@ -50,16 +71,41 @@ void inputmsh(tetgenio &in)
 	int dim = msh.dim;
 	int knode = msh.knode;
 	int nel = msh.nel;
+	int nnode = msh.nnode;
+	int nface = msh.nface;
 
 	in.mesh_dim = dim;
-	in.numberofpoints = msh.nnode;
-	//in.pointlist = new REAL[msh.nnode * msh.dim];
-	in.pointlist = (REAL *)malloc(sizeof(REAL)*msh.nnode*msh.dim);
-	in.numberofpointattributes = 1;
-	//in.pointattributelist = new REAL[msh.nnode];
-	in.pointattributelist = (REAL *)malloc(sizeof(REAL)*msh.nnode);
+	in.numberoftetrahedra = nel;
+	in.numberofpoints = nnode;
+	in.numberoftrifaces = nface;
+	in.numberofpointattributes = 0;
+	in.numberoftetrahedronattributes = 0;
+
+	// 'new' style C++ dynamic allocation
+	in.pointlist = new REAL [nnode*dim];
+	in.tetrahedronlist = new int [nel*knode];
+	in.pointmarkerlist = new int [nnode];
+	if (msh.lscon != NULL) in.tetrahedronvolumelist = new REAL [nel];
+	in.trifacelist = new int [(knode-1)*nface];
+	in.trifacemarkerlist = new int [nface];
+
+	// C dynamic allocation
+	/*
+	in.pointlist = (REAL *)malloc(sizeof(REAL)*nnode*dim);
+	in.tetrahedronlist = (int *)malloc(sizeof(int)*nel*knode);
+	in.pointmarkerlist = (int *)malloc(sizeof(int)*nnode);
+	if (msh.lscon != NULL) in.tetrahedronvolumelist = (REAL *)malloc(sizeof(REAL)*nel);
+	in.trifacelist = (int *)malloc(sizeof(int)*(knode-1)*nface);
+	in.trifacemarkerlist = (int *)malloc(sizeof(int)*nface);
+	*/
+	if (msh.region != NULL)
+	{
+		in.numberoftetrahedronattributes = 1;
+		in.tetrahedronattributelist = new REAL[msh.nel];
+		//in.tetrahedronattributelist = (REAL *)malloc(sizeof(REAL)*msh.nel);
+	}
 	
-        for (n=0;n<msh.nnode;n++)
+        for (n=0;n<nnode;n++)
         {
                 for (d=0;d<dim;d++)
                 {
@@ -67,31 +113,18 @@ void inputmsh(tetgenio &in)
 		}
 		if (msh.bdflag[n] > -1)
                 {
-			in.pointattributelist[n] = 0.0;
+			in.pointmarkerlist[n] = 0;
 		}
 		else
 		{
-			in.pointattributelist[n] = -1.0;
+			in.pointmarkerlist[n] = -1;
 		}
 
-	}
-
-	in.numberoftetrahedra = msh.nel;
-	//in.tetrahedronlist = new int[msh.nel*msh.knode];
-	in.tetrahedronlist = (int *)malloc(sizeof(int)*msh.nel*msh.knode);
-	//in.tetrahedronvolumelist = new REAL[msh.nel];
-	in.tetrahedronvolumelist = (REAL *)malloc(sizeof(REAL)*msh.nel);
-	in.numberoftetrahedronattributes = 0;
-	if (msh.region != NULL)
-	{
-		in.numberoftetrahedronattributes = 1;
-		//in.tetrahedronattributelist = new REAL[msh.nel];
-		in.tetrahedronattributelist = (REAL *)malloc(sizeof(REAL)*msh.nel);
 	}
 
         for (el=0;el<nel;el++)
         {
-		in.tetrahedronvolumelist[el] = (REAL)msh.lscon[el];
+		if (msh.lscon != NULL) in.tetrahedronvolumelist[el] = (REAL)msh.lscon[el];
                 for (k=0;k<knode;k++)
                 {
                         in.tetrahedronlist[knode*el+k] = msh.icon[knode*el+k];
@@ -99,69 +132,128 @@ void inputmsh(tetgenio &in)
 		if (in.numberoftetrahedronattributes == 1) in.tetrahedronattributelist[el] = (REAL)msh.region[el];
         }
 
+	for (n=0;n<nface;n++)
+	{
+                for (k=0;k<(knode-1);k++)
+                {
+			in.trifacelist[(knode-1)*n+k] = msh.iconf[(knode-1)*n+k];
+                }
+		in.trifacemarkerlist[n] = msh.bdflagf[n];
+        }
+
 	return;
 }
 
 // Apparently this usage of pointer in the function declaration is unique to C++
-void outputmsh(tetgenio &out)
+void outputmsh(tetgenio &out,mesh &msho)
+// the second argument can just be the original mesh(?)
 {
-	int n,d,el,k;
+	int n,i,el,k;
 	int knode = msh.knode;
-	msh.nnode = (int)out.numberofpoints;
-	msh.nel = (int)out.numberoftetrahedra;
+	int dim = msh.dim;
+	int nnode = (int)out.numberofpoints;
+	int nel = (int)out.numberoftetrahedra;
+	int nface = (int)out.numberoftrifaces;
+
+	// update new structure
+	msho.nnode = nnode;
+	msho.nel = nel;
+	msho.dim = dim;
+	msho.knode = knode;
+	msho.nface = nface;
 
 	printf("TETGEN: Outputting new mesh\n");
+	
+	if (&msho == &msh)
+	{
+		msho.icon = (int*)realloc(msho.icon,sizeof(int)*nel*knode);
+		msho.s = (double*)realloc(msho.s,sizeof(double)*dim*nnode);
+		msho.bdflag = (int*)realloc(msho.bdflag,sizeof(int)*nnode);
+		if (out.numberoftetrahedronattributes == 1) msho.region = (int*)realloc(msho.region,sizeof(int)*nel);
+		msho.iconf = (int*)realloc(msho.iconf,sizeof(int)*nface*(knode-1));
+			msho.bdflagf = (int*)realloc(msho.bdflagf,sizeof(int)*nface);
+	}
+	else
+	{
+		msho.icon = (int*)malloc(sizeof(int)*nel*knode);
+		msho.s = (double*)malloc(sizeof(double)*dim*nnode);
+		msho.bdflag = (int*)malloc(sizeof(int)*nnode);
+		if (out.numberoftetrahedronattributes == 1) msho.region = (int*)malloc(sizeof(int)*nel);
+		msho.iconf = (int*)malloc(sizeof(int)*nface*(knode-1));
+		msho.bdflagf = (int*)malloc(sizeof(int)*nface);
+	}
 
-	msh.s = (double*)realloc(msh.s,sizeof(double)*msh.dim*msh.nnode);
-	msh.bdflag = (int*)realloc(msh.bdflag,sizeof(int)*msh.nnode);
 	int nintr = 0;
-	for (n=0;n<msh.nnode;n++)
+	double x,y,z;
+	double ep=1.e-8;
+	for (n=0;n<nnode;n++)
 	{
-		for (d=0;d<msh.dim;d++)
+		for (i=0;i<dim;i++)
 		{
-			msh.s[msh.dim*n+d] = (double)out.pointlist[msh.dim*n+d];
+			msho.s[dim*n+i] = (double)out.pointlist[dim*n+i];
 		}
-		if (out.pointattributelist[n]==0) 
+		if (out.pointmarkerlist[n]==0) 
 		{
-			msh.bdflag[n] = nintr++;
+			msho.bdflag[n] = nintr++;
 		}
-		else if (out.pointattributelist[n]!=0)  
+		else if (out.pointmarkerlist[n]==1 || out.pointmarkerlist[n]==-1)  
 		{
-			msh.bdflag[n] = -1;
+			msho.bdflag[n] = -1;
+			//printf("%d\n",out.pointmarkerlist[n]);
+			
+			// botch: tetgen seems to be return some interior nodes as -1
+			// may need more investigation
+			x = msho.s[dim*n];
+			y = msho.s[dim*n+1];
+			z = msho.s[dim*n+2];
+			if (fabs(x)>ep && fabs(x-1.)>ep && fabs(y)>ep && fabs(y-1.)>ep && fabs(z)>ep && fabs(z-1.)>ep)
+			{
+				//printf("(%.5e,%.5e,%.5e), %d\n",x,y,z,out.pointmarkerlist[n]);
+				msho.bdflag[n] = nintr++;
+			}	
 		}
+
+	}
+	msho.neq = nintr;
+	
+	for (el=0;el<nel;el++)
+	{
+		for (k=0;k<knode;k++)
+		{
+			msho.icon[knode*el+k] = (int)out.tetrahedronlist[knode*el+k];
+		}
+		if (out.numberoftetrahedronattributes == 1) msho.region[el] = (int)out.tetrahedronattributelist[el];
+			//printf("el = %d\n",el);
 	}
 
-	msh.icon = (int*)realloc(msh.icon,sizeof(int)*msh.nel*msh.knode);
-	if (out.numberoftetrahedronattributes == 1) msh.region = (int*)realloc(msh.region,sizeof(int)*msh.nel);
-	for (el=0;el<msh.nel;el++)
+	for (n=0;n<nface;n++)
 	{
-		for (k=0;k<msh.knode;k++)
+		for (k=0;k<(knode-1);k++)
 		{
-			msh.icon[knode*el+k] = (int)out.tetrahedronlist[knode*el+k];
+			msho.iconf[(knode-1)*n+k] = (int)out.trifacelist[(knode-1)*n+k];
 		}
-		if (out.numberoftetrahedronattributes == 1) msh.region[el] = (int)out.tetrahedronattributelist[el];
-		//printf("el = %d\n",el);
+		msho.bdflagf[n] = (int)out.trifacemarkerlist[n];
 	}
-
 	return;
 }
 
-void interpsol(tetgenio &out)
+void interpsol(double *sn,int nnode)
 {
 	int n,el,i,j,inck;
 	double v,vk;
 	int knode = msh.knode;
 	int dim = msh.dim;
-	double *newu = (double *)malloc(sizeof(double)*out.numberofpoints);
+	//int nnode = out.numberofpoints;
+	double *newu = (double *)malloc(sizeof(double)*nnode);
 	double *beta = (double *)malloc(sizeof(double)*knode);
 	double **ik = (double **)malloc(sizeof(double *)*knode);
 	int count = 0; // using for debugging
 
 	printf("TETGEN: Interpolating to new mesh\n");
 
-	for (n=0;n<out.numberofpoints;n++) newu[n] = 1.0;
+	for (n=0;n<nnode;n++) newu[n] = 1.0;
 
-	for (n=0;n<out.numberofpoints;n++)
+	for (n=0;n<nnode;n++)
 	{
 		for (el=0;el<msh.nel;el++)
 		{
@@ -181,7 +273,7 @@ void interpsol(tetgenio &out)
 				{
 					ik[j] = &(msh.s[msh.icon[knode*el+j]*dim]);
 				}
-				ik[i] = &(out.pointlist[n*dim]);
+				ik[i] = &(sn[n*dim]); // only pointer for x coord
 				//printf("pk[%d] = [%.5f %.5f %.5f];\n",i,*ik[i],*(ik[i]+1),*(ik[i]+2));
 				vk = volume(ik[0],ik[1],ik[2],ik[3]);
 				beta[i] = vk/v;
@@ -211,27 +303,13 @@ void interpsol(tetgenio &out)
 			}
 		}
 	}
-	spstiff.sol = (double*)realloc(spstiff.sol,sizeof(double)*out.numberofpoints);
-	for (n=0;n<out.numberofpoints;n++)
+	spstiff.sol = (double*)realloc(spstiff.sol,sizeof(double)*nnode);
+	for (n=0;n<nnode;n++)
 	{
 		spstiff.sol[n] = newu[n];
 	}
-	free(newu);
 
+	free(newu); free(beta); free(ik);
 	return;
 }
 
-double volume(double *a11,double *a21,double *a31,double *a41)
-// this volume function uses points for the each node point
-// then increments for each component
-{
-	double vol;
-
-	vol = 1.0*det3(*a21,*(a21+1),*(a21+2),*a31,*(a31+1),*(a31+2),*a41,*(a41+1),*(a41+2))\
-		-*a11*det3(1.0,*(a21+1),*(a21+2),1.0,*(a31+1),*(a31+2),1.0,*(a41+1),*(a41+2))\
-		+*(a11+1)*det3(1.0,*a21,*(a21+2),1.0,*a31,*(a31+2),1.0,*a41,*(a41+2))\
-		-*(a11+2)*det3(1.0,*a21,*(a21+1),1.0,*a31,*(a31+1),1.0,*a41,*(a41+1));
-	vol = vol/6.0;
-
-	return vol;
-}

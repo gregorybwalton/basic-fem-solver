@@ -3,9 +3,9 @@
 void chkinterior(double *,int *);
 void readnode();
 void readele();
-//int readface(int **,int **);
+void readface();
 
-struct mesh msh;
+mesh msh;
 char ifnm[50];
 char idir[50];
 int soltype;
@@ -28,6 +28,7 @@ void readmesh(char* fnm,char* fdir)
 
         readnode();
 	readele();
+	readface();
 
 	nintr = 0; // Number of non-boundary nodes
 	for (node=0;node<msh.nnode;node++)
@@ -42,9 +43,11 @@ void readmesh(char* fnm,char* fdir)
 			// boundary
         	        msh.bdflag[node] = -1;
 	        }
-		//printf("(%.15f,%.15f,%.15f), %i\n",msh.s[node*dim+0],msh.s[node*dim+1],msh.s[node*dim+2],msh.bdflag[node]);
+		//printf("(%.15f,%.15f,%.15f), %i\n",msh.s[node*msh.dim+0],msh.s[node*msh.dim+1],msh.s[node*msh.dim+2],msh.bdflag[node]);
 	}
 	msh.neq = nintr;
+
+	//msh.vol = (double *)malloc(sizeof(double)*msh.nel);
 
 	printf("Number of dimensions = %d\n",msh.dim);
 	printf("Number of nodes per element = %d\n",msh.knode);
@@ -157,7 +160,7 @@ void readele( )
 	return;
 }
 
-int readface(int** iconf,int** bdflagf)
+void readface(void)
 // Read .face file
 {
 	FILE *ffil;
@@ -178,26 +181,28 @@ int readface(int** iconf,int** bdflagf)
 	
 	srt = fscanf(ffil,"%d %d",&nface,&bif);
 	//printf("nface = %d\n",nface);
+	msh.nface = nface;
 	
-	*iconf = (int *)malloc(sizeof(int)*kf*nface);
-	*bdflagf = (int *)malloc(sizeof(int)*nface);
+	msh.iconf = (int *)malloc(sizeof(int)*kf*nface);
+	msh.bdflagf = (int *)malloc(sizeof(int)*nface);
+	//msh.lscon = (double *)malloc(sizeof(double)*msh.nel);
 
 	for (n=0;n<nface;n++)
 	{
-		srt = fscanf(ffil,"%*d %d %d %d",&(*iconf)[(n*kf)],&(*iconf)[(n*kf)+1],&(*iconf)[(n*kf)+2]);
+		srt = fscanf(ffil,"%*d %d %d %d",&msh.iconf[(n*kf)],&msh.iconf[(n*kf)+1],&msh.iconf[(n*kf)+2]);
 		if (bif==1)
 		{
-			srt = fscanf(ffil," %d\n",&(*bdflagf)[n]);
+			srt = fscanf(ffil," %d\n",&msh.bdflagf[n]);
 			//printf("bdflagf[%d] = %d\n",n,(*bdflagf)[n]);
 		}
 		// reducing the index
 		for (i=0;i<kf;i++)
 		{
-			(*iconf)[(n*kf)+i]--;
+			msh.iconf[(n*kf)+i]--;
 		}
 	}
 	fclose(ffil);
-	return nface;
+	return;
 }
 
 void chkinterior(double* s,int* bd)
@@ -220,5 +225,12 @@ void chkinterior(double* s,int* bd)
 	}
 	*bd = 0;
 	//printf("(%.15f,%.15f,%.15f), %i\n",*(s+0),*(s+1),*(s+2),*bd);
+	return;
+}
+
+void freemesh(mesh *tmsh)
+{
+	free(tmsh->icon);free(tmsh->s);free(tmsh->bdflag);free(tmsh->region);free(tmsh->lscon);
+
 	return;
 }
