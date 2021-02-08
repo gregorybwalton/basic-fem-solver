@@ -1,11 +1,11 @@
-#include "./petsc.h"
+#include "petsc.h"
 
 PetscErrorCode writebin(Mat*,Vec*,Vec*);
 void writeres(char *,int,double,int,double,double);
 double calcerror(double *,int);
 double droptolselect(int,char **);
 
-void ptsolve(int* argc,char*** argv,char* help,bool wbin)
+void ptsolve(bool wbin,PetscMPIInt size)
 {
 	//int nz = spstiff.nzeros;
 	int *nnz = spstiff.nnzeros;
@@ -32,7 +32,6 @@ void ptsolve(int* argc,char*** argv,char* help,bool wbin)
 	PetscReal norm,rnorm;
 	PetscInt its;
 	PetscErrorCode ierr;
-	PetscMPIInt size, rank;
 	PetscScalar neg_one = -1.0;
 	PetscScalar one = 1.0;
 	PetscReal tol = 1.0e-6;
@@ -40,10 +39,10 @@ void ptsolve(int* argc,char*** argv,char* help,bool wbin)
         PetscReal emax,emin;
 	PetscLogDouble mem;
 
-	ierr = PetscInitialize(argc,argv,(char*) 0,help);
+	//ierr = PetscInitialize(argc,argv,(char*) 0,help);
 	//ierr = PetscInitialize(NULL,NULL,NULL,help);
-	ierr = MPI_Comm_size(PETSC_COMM_WORLD,&size);
-	ierr = MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+	//ierr = MPI_Comm_size(PETSC_COMM_WORLD,&size);
+	//ierr = MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
         ierr = PetscMemorySetGetMaximumUsage(); // tells petsc to monitor memory
 	
@@ -234,10 +233,10 @@ void ptsolve(int* argc,char*** argv,char* help,bool wbin)
 	ierr = KSPDestroy(&ksp);
 	
 	PetscPrintf(PETSC_COMM_WORLD,"--------------------\n");
-	PetscFinalize();
+	//PetscFinalize();
 	
 	nerr = calcerror(spstiff.sol,0);
-	writeres("./results/study",neq,nerr,its,timet,mem);
+	//writeres("./results/study",neq,nerr,its,timet,mem);
 
 	return;
 }
