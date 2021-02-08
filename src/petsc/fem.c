@@ -1,40 +1,62 @@
-static char helpstr[] = "Simple 3D FEM solver.\n\n";
+//#include "../fem.h"
+#include "petsc.h"
 
-#include "../fem.h"
+static char helpstr[] = "Simple 3D FEM solver.\n\n";
 
 // Define functions here
 void readmesh(char *,char *);
 void readvtk(char *,char *);
-void vtkoutput(double *);
+void vtkoutput(double *,int);
 void resoutput(double *);
 void d3n4(void);
-void ptsolve(int *,char ***,char *,bool);
 char* meshselect(int,char **);
-void meshvolume();
 void runtetgen();
+void deformmesh(int,double);
+void writetetgen(char *);
+void meshqual(void);
 
-int main (int nargin, char *argsin[])
+void pinit(int *,char ***,PetscMPIInt *);
+void ptsolve(bool,PetscMPIInt);
+void pfin();
+
+int main (int argc, char **args)
 {
-
+	int i;
+	int imax = 16;
+	PetscMPIInt psize;
 	soltype = 1; // just some boolean which change the problem type
 	//readmesh(meshselect(nargin,argsin),"../../data/3d/");
-	readmesh(meshselect(nargin,argsin),"../../data/3d/region/innersmall/");
-	//readvtk("test3d","../../data/grummp/");
-	//readvtk("inner","../../data/grummp/");
+	readmesh(meshselect(argc,args),"../../data/3d/region/innersmall/");
 
 	d3n4(); // generates the matrices in spare form
-	ptsolve(&nargin,&argsin,helpstr,false); // Solve sparse matrix using PETSc, working in serial
+	pinit(&argc,&args,&psize);
+	ptsolve(false,psize); // Solve sparse matrix using PETSc, working in serial
 
-	//vtkoutput(spstiff.sol);
+	vtkoutput(spstiff.sol,0);
+	meshqual();
 	//resoutput(spstiff.sol);
 
-	// Adaptivity bit
-	meshvolume(); // Calculting the volume requirement
-	//meshlengthscale(); // GRUMMP refinement
-	runtetgen(); // Running TetGen from code
-	vtkoutput(spstiff.sol);
+	runtetgen();
+	for (i=1;i<=imax;i++)
+	{
+		printf("\nSTEP %d\n",i);
+		//deformmesh(1,.5); // rotation
+		deformmesh(2,2.); // bugle deformation
+		meshqual();
+		//writetetgen("./testoutput/testoutput");
+		if ((i%4)==0) {
+			runtetgen(); // Running TetGen from code
+			meshqual();
+		}
+		vtkoutput(spstiff.sol,i);
+	}
+	pfin();
 
-	//free(msh.icon); free(msh.s); free(msh.bdflag); free(msh.region); free(msh.lscon);
+	//meshvolumescale(); // Calculting the volume requirement about the distance to the interior surface
+        //meshlengthscale(); // GRUMMP refinement
+	//runtetgen(); // Running TetGen from code
+	//vtkoutput(spstiff.sol,1);
+
 	return 0;
 }
 

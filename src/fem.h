@@ -6,20 +6,25 @@
 #include <stdbool.h>
 #include <unistd.h>
 
-#include "tetgen.h"
 
-// Define global variables here
-struct mesh
+typedef struct
 {
 	int nnode,nel,dim,knode,neq;
-	int *icon;
-	double *s;
-	int *bdflag;
-	int *region;
-	double *lscon; // lengthscale constraint
-};
+	int *icon; // connectivity matrix
+	double *s; // nodes
+	int *bdflag; // boundary flag
+	int *region; // region index
+	//double *vol; // element volume - really useful to have
 
-typedef struct node list_node; // define list structure as 'list_node'
+	// optional
+	int nface; // number of internal face node
+	int *iconf; // connectivity matrix for internal face
+	int *bdflagf; // boundary flag for internal face
+	double *lscon; // lengthscale constraint
+} mesh;
+
+// define list structure as 'list_node'
+typedef struct node list_node;
 struct node
 {
 	int na; // neighbouring node
@@ -43,7 +48,8 @@ struct gauss
 };
 
 
-extern struct mesh msh;
+// Define global variables here
+extern mesh msh;
 extern struct sysmat spstiff;
 extern int soltype; // define the soltype
 extern char sfnm[50]; // save file name
@@ -60,3 +66,7 @@ extern char *savename(void);
 extern void printlist(list_node **,int,int);
 extern void writelist(list_node **,int,int,char *);
 extern void listdel(list_node **,int);
+extern void listfree(list_node *);
+extern void freemesh(mesh *);
+extern double volume(double *,double *,double *,double *);
+extern double evolume(int);
