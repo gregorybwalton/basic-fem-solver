@@ -108,7 +108,6 @@ void listarrayfree(list_node **list,int neq)
 void listfree(list_node *head)
 // free each list in the array
 {
-	int i;
 	list_node *tmp;
 
 	while (head != NULL)
