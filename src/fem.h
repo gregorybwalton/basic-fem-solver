@@ -15,6 +15,7 @@ typedef struct
 	int *bdflag; // boundary flag
 	int *region; // region index
 	//double *vol; // element volume - really useful to have
+	int *neigh; // element neighbour indices
 
 	// optional
 	int nface; // number of internal face node

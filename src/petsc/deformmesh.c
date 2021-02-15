@@ -1,13 +1,13 @@
 #include "petsc.h"
 
-void translateregion(double,double *,int *);
-void rotateregion(double,double *,double *,int *);
-void bulgez(double,double *,int *,double,double);
+static void translateregion(double,double *,int *);
+static void rotateregion(double,double *,double *,int *);
+static void bulgez(double,double *,int *,double,double);
 
 // radial basis interpolation functions
-void RBFinterp(double *,int *);
-void radialsolve(list_node **,double *,double *,double *,int *,int,int,int);
-double phifunction(double *,double *,int);
+static void RBFinterp(double *,int *);
+static void radialsolve(list_node **,double *,double *,double *,int *,int,int,int);
+static double phifunction(double *,double *,int);
 void poplist(list_node **,double,int);
 
 void deformmesh(int deftype,double dx)
@@ -72,7 +72,7 @@ void deformmesh(int deftype,double dx)
 }
 
 
-void translateregion(double dx,double *sn,int *reg)
+static void translateregion(double dx,double *sn,int *reg)
 {
 	int nnode = msh.nnode;
 	int dim = msh.dim;
@@ -93,7 +93,7 @@ void translateregion(double dx,double *sn,int *reg)
 	return;
 }
 
-void rotateregion(double theta,double xr[3],double *sn,int *reg)
+static void rotateregion(double theta,double xr[3],double *sn,int *reg)
 // rotation angle, center of rotation
 {
 	int nnode = msh.nnode;
@@ -119,7 +119,7 @@ void rotateregion(double theta,double xr[3],double *sn,int *reg)
 	return;
 }
 
-void bulgez(double scale,double *sn,int *reg,double z1,double z2)
+static void bulgez(double scale,double *sn,int *reg,double z1,double z2)
 // buldge the interior faces in the z direction
 {
 	int nnode = msh.nnode;
@@ -138,7 +138,7 @@ void bulgez(double scale,double *sn,int *reg,double z1,double z2)
 	return;
 }
 
-void RBFinterp(double *sn,int *reg)
+static void RBFinterp(double *sn,int *reg)
 // radial interpolation of the unknown mesh nodes
 {
 	int nnode = msh.nnode;
@@ -267,67 +267,24 @@ void RBFinterp(double *sn,int *reg)
 	}
 	free(alist);
 
-	/*
-	double *f = (double *)calloc(neq,sizeof(double));
-	double *alpha = (double *)calloc(nb,sizeof(double));
-	double *beta = (double *)calloc(dim+1,sizeof(double));
-	double tmp,p;
-	for (i=0;i<dim;i++)
-	{
-		// displacements at the boundaries
-		for (j=0;j<nb;j++) f[j] = sn[bi[j]*dim+i];
-		for (j=nb;j<neq;j++) f[j] = 0.;
-
-		// solve the system to find alphas and betas
-		radialsolve(alist,f,alpha,beta,nnz,neq,nb,dim);
-		//for (j=0;j<nb;j++) printf("alpha[%d] = %.5e\n",j,alpha[j]);
-		//for (j=0;j<dim+1;j++) printf("beta[%d] = %.5e\n",j,beta[j]);
-
-		for (n=0;n<nnode;n++)
-		{
-			if (b[n]==-1)
-			{
-				tmp = 0.;
-				for (k=0;k<nb;k++)
-				{
-					//tmp += alpha[k]*phifunction(&sn[n*dim],&sn[bi[k]*dim],dim);
-					tmp += alpha[k]*phifunction(&s[n*dim],&s[bi[k]*dim],dim);
-				}
-				p = beta[0] + (s[n*dim]*beta[1]) + (s[n*dim+1]*beta[2]) + (s[n*dim+2]*beta[3]);
-				//sn[n*dim+i] = tmp + beta[0] + (sn[n*dim]*beta[1]) + (sn[n*dim+1]*beta[2]) + (sn[n*dim+2]*beta[3]);
-				sn[n*dim+i] = tmp + p;
-				if (sn[n*dim+i]<0. || sn[n*dim+i]>1.) printf("Error: node leakage, new location outside of the domain.\n");
-			}
-			//printf("s[%d] = %.5f\n",n,sn[n*dim+i]);
-		}
-	}
-	free(f); free(alpha); free(beta);
-	free(bi); free(b); free(nnz);
-	for (i=0;i<neq;i++)
-	{
-		listfree(alist[i]);
-		alist[i] = NULL;
-	}
-	free(alist);
-	*/
-
 	// interpolate solution?
 
 	return;
 }
 
-double phifunction(double *xi,double *xj,int dim)
+static double phifunction(double *xi,double *xj,int dim)
 // definition of the radial basis function
 {
 	double phi;
 	int i;
 	// rule of thumb: smallest as possible
-	double r = 0.1; // radius of influence
+	//double r = 0.1; // radius of influence
+	double r = 0.2;
 	double x = 0.;
 	for (i=0;i<dim;i++) x += (*(xi+i)-*(xj+i))*(*(xi+i)-*(xj+i));
 	x = sqrt(x);
 	x /= r;
-	if (x > 1){
+	if (x > 1.){
 		phi = 0.;
 	} else {
 		phi = (1.-x)*(1.-x); // radial basis function compact support
@@ -338,21 +295,7 @@ double phifunction(double *xi,double *xj,int dim)
 	return phi;
 }
 
-void poplist(list_node **curr,double cval,int cna)
-// used to build and populate a sparse linked list
-// worth moving
-{
-        (*curr)->next = (list_node *)malloc(sizeof(list_node));
-	(*curr)->next->na = cna;
-	(*curr)->next->val = cval;
-	(*curr)->next->next = NULL;
-	(*curr) = (*curr)->next;
-	return;
-}
-
-
-
-void radialsolve(list_node **list,double *f,double *alpha,double *beta,int *nnz,int neq,int nb,int dim)
+static void radialsolve(list_node **list,double *f,double *alpha,double *beta,int *nnz,int neq,int nb,int dim)
 // solves for the radial basis function coefficient alpha and beta
 {
 	PetscErrorCode ierr;

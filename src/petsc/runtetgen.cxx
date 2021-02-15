@@ -1,15 +1,31 @@
 #include "../fem.h"
 #include "tetgen.h"
 
+void runtetgen();
 void meshvolumescale();
 void inputmsh(tetgenio &);
 void outputmsh(tetgenio &,mesh &);
-//void interpsol(tetgenio &);
 void interpsol(double *,int);
+void interplocal(double *,int);
 double calcmass();
 void tetfin(tetgenio &);
 
+void meshquality(double *,double *);
+
+void checkqualtetgen()
+// check the mesh quality and determine a re mesh
+{
+	double minvol,maxar;
+
+	meshquality(&minvol,&maxar);
+
+	if (minvol < 1.e-8 || maxar > 1.e2) runtetgen();
+
+	return;
+}
+
 void runtetgen()
+// running re meshing
 {
 	printf("\nTETGEN: runtetgen\n");
 	
@@ -21,17 +37,17 @@ void runtetgen()
 	// define switches
 	switches.refine = 1; // -r, refines
 	switches.quality = 1; // -q, quality
-	//switches.diagnose = 1; // -d, detecting self intersections
-	//switches.coarsen = 1; // -R, coarsen
+	switches.neighout = 1; // -n, neighout
 	//switches.nobisect = 1; // -Y, supresses boundary facets/segments splitting
+	//switches.diagnose = 1; // -d, detecting self intersections
 	if (msh.lscon != NULL) switches.varvolume = 1; // -a, varvolume
-	//switches.opt_max_asp_ratio = 50.; // max aspect ratio
+	switches.opt_max_asp_ratio = 1.e2; // max aspect ratio
 	//switches.opt_iterations = 1; // max number of iterations
 	//switches.opt_scheme = 0; // local mesh operations, 0 to 7
 	//switches.opt_max_flip_level = 0; // max flip level, 0 to 10
 	//switches.minratio = 4.0; // -q, min ratio
-	switches.quiet = 0; // supresses terminal output, except errors
-	switches.verbose = 1; // 0 nothing, max 4
+	switches.quiet = 1; // supresses terminal output, except errors
+	switches.verbose = 0; // 0 nothing, max 4
 
 	double totalm1 = calcmass();
 
@@ -40,7 +56,8 @@ void runtetgen()
 	// bgmin, -m, constraint functions
 	tetrahedralize(&switches,&in,&out);
 	//out.save_nodes("testout");
-	interpsol(out.pointlist,out.numberofpoints);
+	//interpsol(out.pointlist,out.numberofpoints);
+	interplocal(out.pointlist,out.numberofpoints);
 	outputmsh(out,msh);
 	//tetfin(in);
 	void deinitialize(); // don't need tetgen anymore
@@ -171,7 +188,8 @@ void outputmsh(tetgenio &out,mesh &msho)
 		msho.bdflag = (int*)realloc(msho.bdflag,sizeof(int)*nnode);
 		if (out.numberoftetrahedronattributes == 1) msho.region = (int*)realloc(msho.region,sizeof(int)*nel);
 		msho.iconf = (int*)realloc(msho.iconf,sizeof(int)*nface*(knode-1));
-			msho.bdflagf = (int*)realloc(msho.bdflagf,sizeof(int)*nface);
+		msho.bdflagf = (int*)realloc(msho.bdflagf,sizeof(int)*nface);
+		msho.neigh = (int *)realloc(msho.neigh,sizeof(int)*nel*knode);
 	}
 	else
 	{
@@ -181,6 +199,7 @@ void outputmsh(tetgenio &out,mesh &msho)
 		if (out.numberoftetrahedronattributes == 1) msho.region = (int*)malloc(sizeof(int)*nel);
 		msho.iconf = (int*)malloc(sizeof(int)*nface*(knode-1));
 		msho.bdflagf = (int*)malloc(sizeof(int)*nface);
+		msho.neigh = (int*)malloc(sizeof(int)*nel*knode);
 	}
 
 	int nintr = 0;
@@ -221,6 +240,7 @@ void outputmsh(tetgenio &out,mesh &msho)
 		for (k=0;k<knode;k++)
 		{
 			msho.icon[knode*el+k] = (int)out.tetrahedronlist[knode*el+k];
+			msho.neigh[knode*el+k] = (int)out.neighborlist[knode*el+k];
 		}
 		if (out.numberoftetrahedronattributes == 1) msho.region[el] = (int)out.tetrahedronattributelist[el];
 			//printf("el = %d\n",el);
@@ -313,3 +333,84 @@ void interpsol(double *sn,int nnode)
 	return;
 }
 
+void interplocal(double *sn,int nnode)
+// using the localisation algorithm
+{
+	int el,eni,en,found,i,j,n;
+	double v,vk;
+	int knode = msh.knode;
+	int dim = msh.dim;
+	int *neigh = msh.neigh;
+	 double *newu = (double *)malloc(sizeof(double)*nnode);
+        double *beta = (double *)malloc(sizeof(double)*knode);
+	double **ik = (double **)malloc(sizeof(double *)*knode);
+
+	printf("TETGEN: Interpolating to new mesh\n");
+
+	// useful for debugging
+	for (n=0;n<nnode;n++) newu[n] = 1.0;
+
+	for (n=0;n<nnode;n++)
+	//for (n=0;n<1001;n++)
+	//for (n=0;n<1;n++)
+	{
+		eni = 0; // starting element for now
+		found = 0;
+		//printf("sn = (%.5f, %.5f, %.5f)\n",sn[n*dim],sn[n*dim+1],sn[n*dim+2]);
+
+		while (found != 1)
+		{
+			en = eni;
+			/*
+                        printf("p =\n");
+                        printf("[%.5f %.5f %.5f;\n",msh.s[msh.icon[knode*en]*dim],msh.s[msh.icon[knode*en]*dim+1],msh.s[msh.icon[knode*en]*dim+2]);
+                        printf("%.5f %.5f %.5f;\n",msh.s[msh.icon[knode*en+1]*dim],msh.s[msh.icon[knode*en+1]*dim+1],msh.s[msh.icon[knode*en+1]*dim+2]);
+                        printf("%.5f %.5f %.5f;\n",msh.s[msh.icon[knode*en+2]*dim],msh.s[msh.icon[knode*en+2]*dim+1],msh.s[msh.icon[knode*en+2]*dim+2]);
+                        printf("%.5f %.5f %.5f];\n",msh.s[msh.icon[knode*en+3]*dim],msh.s[msh.icon[knode*en+3]*dim+1],msh.s[msh.icon[knode*en+3]*dim+2]);
+			*/
+			v = evolume(en);
+			found = 1;
+			for (i=0;i<knode;i++)
+			{
+				for (j=0;j<knode;j++)
+				{
+					ik[j] = &(msh.s[msh.icon[knode*en+j]*dim]);
+				}
+				ik[i] = &(sn[n*dim]);
+				//printf("pk[%d] = [%.5f %.5f %.5f];\n",i,*ik[i],*(ik[i]+1),*(ik[i]+2));
+				vk = volume(ik[0],ik[1],ik[2],ik[3]);
+				beta[i] = vk/v;
+				//printf("beta[%d] = %.5f\n",i,beta[i]);
+				eni = neigh[knode*en+i];
+				//printf("en = %d\n",en+1);
+				//printf("eni = %d\n",eni+1);
+
+				// some dodgy round, since vtks are only written to 6 d.p.
+				if (beta[i]<0. && fabs(beta[i])>1.e-10 && eni>-1 && en!=eni)
+				{
+					found = 0;
+					break;			
+				}
+				found = 1;
+			}
+		}
+		if (found == 1)
+		{
+			newu[n] = 0.;
+			// interpolation based upon volume ratio
+			for (i=0;i<knode;i++)
+			{
+				newu[n] += fabs(beta[i])*spstiff.sol[msh.icon[knode*en+i]];
+			}
+			//printf("newu[%d] = %.5f\n",n,newu[n]);
+		}
+	}
+        spstiff.sol = (double*)realloc(spstiff.sol,sizeof(double)*nnode);
+        for (n=0;n<nnode;n++)
+        {
+                spstiff.sol[n] = newu[n];
+        }
+
+	free(newu); free(beta); free(ik);
+	return;
+}

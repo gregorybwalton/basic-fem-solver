@@ -14,11 +14,11 @@ LDFLAGS=$(PLD) $(TLD)
 #LDLIBS=-lm -w \
 
 #LDLIBS=-lm -w -ggdb \ 
-LDLIBS=-lm -w -ggdb \
+LDLIBS=-lm -w -ggdb -pg \
 	-lpetsc -ltet
 OBJC=fem.c\
-	../readtetgen.c ../output.c ../writevtk.c ../calcerror.c ../calcvolume.c ../gaussfunc.c ../listtool.c ../d3n4.c ../writetetgen.c \
-	../meshquality.c meshvolumescale.c deformmesh.c calcmass.c\
+	../readtetgen.c ../outputfunc.c ../writevtk.c ../calcerror.c ../calcvolume.c ../gaussfunc.c ../listtool.c ../d3n4.c ../writetetgen.c \
+	meshquality.c deformmesh.c calcmass.c proto/meshvolumescale.c \
 	pinit.c psolve.c pfin.c
 OBJCX= ./runtetgen.cxx
 
@@ -38,4 +38,4 @@ $(objcx):	%.o:%.cxx
 		$(CC) -c $(INCLUDE) $(LDFLAGS) $(LDLIBS) $< -o $@
 
 clean::
-	rm fem *.o ../*.o ./proto/*.o ./results/*.vtk.*
+	rm fem *.o ../*.o ./proto/*.o ./results/*.vtk.* ./results/*.vol

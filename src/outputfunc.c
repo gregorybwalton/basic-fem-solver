@@ -74,10 +74,15 @@ void writevol()
 	int el;
 	int nel = msh.nel;
 	int *reg = msh.region;
-
 	double vol;
 	double tvol = 0.;
 	double invol = 0.;
+        char vfnm[50];
+
+        strcpy(vfnm,savename());
+        strcat(vfnm,".vol");
+	printf("Saving: %s\n",vfnm);
+
 	for (el=0;el<nel;el++)
 	{
 		vol = evolume(el);
@@ -85,7 +90,7 @@ void writevol()
 		if (reg[el]==1) invol += vol;
 	}
 
-	fil = fopen("results/vols.out","a");
+	fil = fopen(vfnm,"a");
 	fprintf(fil,"%.15f, %.15f\n",tvol,invol);
 
 	fclose(fil);

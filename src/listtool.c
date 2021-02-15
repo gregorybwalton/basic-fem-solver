@@ -179,3 +179,17 @@ list_node** copylist(list_node **head,int nt)
 	}
 	return newhead;
 }
+
+void poplist(list_node **curr,double cval,int cna)
+// used to build and populate a sparse linked list
+// worth moving
+{
+        (*curr)->next = (list_node *)malloc(sizeof(list_node));
+	(*curr)->next->na = cna;
+	(*curr)->next->val = cval;
+	(*curr)->next->next = NULL;
+	(*curr) = (*curr)->next;
+	return;
+}
+
+

@@ -4,6 +4,7 @@ void chkinterior(double *,int *);
 void readnode();
 void readele();
 void readface();
+void readneigh();
 
 mesh msh;
 char ifnm[50];
@@ -29,6 +30,7 @@ void readmesh(char* fnm,char* fdir)
         readnode();
 	readele();
 	readface();
+	readneigh();
 
 	nintr = 0; // Number of non-boundary nodes
 	for (node=0;node<msh.nnode;node++)
@@ -203,6 +205,55 @@ void readface(void)
 	}
 	fclose(ffil);
 	return;
+}
+
+void readneigh(void)
+// Read .neigh file
+{
+	FILE *nfil;
+	char nfnm[100];
+	int srt;
+	int n,i;
+	int nel = msh.nel;
+	int nneigh,nface;
+
+	snprintf(nfnm,sizeof(nfnm),"%s%s%s",idir,ifnm,".neigh");
+
+	printf("Reading: %s\n",nfnm);
+
+        if ((nfil = fopen(nfnm,"r"))==NULL)
+        {
+                printf("cannot open: %s\n",nfnm);
+                exit(1);
+        }
+
+	srt = fscanf(nfil,"%d %d",&nneigh,&nface);
+	
+	if (nneigh != nel)
+	{
+		printf("Error: number of element and neighbours do not agree.\n");
+		exit(1);
+	}
+
+	msh.neigh = (int *)malloc(sizeof(int)*nneigh*nface);
+
+	for (n=0;n<nel;n++)
+	{
+		srt = fscanf(nfil,"%*d");
+		for (i=0;i<nface;i++)
+		{
+			srt = fscanf(nfil," %d",&msh.neigh[(n*nface)+i]);
+			msh.neigh[(n*nface)+i]--;
+		}
+		//printf("%d %d %d %d\n",msh.neigh[n*nface],msh.neigh[n*nface+1],msh.neigh[n*nface+2],msh.neigh[n*nface+3]);
+		srt = fscanf(nfil,"\n");
+	}
+	fclose(nfil);
+	return;
+	
+	
+
+
 }
 
 void chkinterior(double* s,int* bd)
