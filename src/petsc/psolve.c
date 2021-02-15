@@ -5,10 +5,9 @@ void writeres(char *,int,double,int,double,double);
 double calcerror(double *,int);
 double droptolselect(int,char **);
 
-void ptsolve(bool wbin,PetscMPIInt size)
+void ptsolve(PETSC_STRUC *pets,bool wbin)
 {
 	//int nz = spstiff.nzeros;
-	int *nnz = spstiff.nnzeros;
 	int *bdflag = msh.bdflag;
 	int nnode = msh.nnode;
 	int dim = msh.dim;
@@ -24,11 +23,6 @@ void ptsolve(bool wbin,PetscMPIInt size)
 	struct rusage usage;
 	double timet,nerr;
 
-	//MPI_Comm comm = MPI_COMM_WORLD;
-	Mat A; //linear system matrix
-	Vec b,x; //petsc rhs vector, solution vector
-	KSP ksp; //linear solver
-	PC pc; // preconditioner
 	PetscReal norm,rnorm;
 	PetscInt its;
 	PetscErrorCode ierr;
@@ -38,32 +32,6 @@ void ptsolve(bool wbin,PetscMPIInt size)
 	PetscInt maxit = 10000;
         PetscReal emax,emin;
 	PetscLogDouble mem;
-
-	//ierr = PetscInitialize(argc,argv,(char*) 0,help);
-	//ierr = PetscInitialize(NULL,NULL,NULL,help);
-	//ierr = MPI_Comm_size(PETSC_COMM_WORLD,&size);
-	//ierr = MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
-
-        ierr = PetscMemorySetGetMaximumUsage(); // tells petsc to monitor memory
-	
-	PetscPrintf(PETSC_COMM_WORLD,"Vec setup...\n");
-	ierr = VecCreate(PETSC_COMM_WORLD,&x);
-	ierr = VecSetSizes(x,PETSC_DECIDE,neq);
-	ierr = VecSetFromOptions(x);
-	ierr = VecDuplicate(x,&b);
-	
-	PetscPrintf(PETSC_COMM_WORLD,"Mat setup...\n");
-	// series allocation
-	//ierr = MatCreateSeqAIJ(comm,n,n,0,nnz,&A); // compressed row sparse format
-	// parallel allocation - See page 95 of the manual
-	PetscInt dnz = (neq/size);
-	PetscInt onz = neq-(neq/size);
-	ierr = MatCreate(PETSC_COMM_WORLD,&A);
-	ierr = MatSetSizes(A,PETSC_DECIDE,PETSC_DECIDE,neq,neq);
-	ierr = MatSetFromOptions(A);
-	ierr = MatMPIAIJSetPreallocation(A,dnz,NULL,onz,NULL);
-	ierr = MatSeqAIJSetPreallocation(A,0,nnz);
-	ierr = MatSetUp(A);
 
 	// populate dense matrix, and vectors
 	PetscPrintf(PETSC_COMM_WORLD,"Populate mats and vecs...\n");
@@ -81,21 +49,21 @@ void ptsolve(bool wbin,PetscMPIInt size)
 				ncol++;
 				current = current->next;
 			}
-			ierr = MatSetValues(A,1,&nbd,ncol,icol,vcol,INSERT_VALUES);
-			ierr = VecSetValues(b,1,&nbd,&spstiff.load[nbd],INSERT_VALUES);
-			ierr = VecSetValues(x,1,&nbd,&spstiff.sol[node],INSERT_VALUES);
+			ierr = MatSetValues(pets->A,1,&nbd,ncol,icol,vcol,INSERT_VALUES);
+			ierr = VecSetValues(pets->b,1,&nbd,&spstiff.load[nbd],INSERT_VALUES);
+			ierr = VecSetValues(pets->x,1,&nbd,&spstiff.sol[node],INSERT_VALUES);
 			//PetscPrintf(PETSC_COMM_WORLD,"load[%i] = %g\n",nbd,spstiff.load[nbd]);
 			//PetscPrintf(PETSC_COMM_WORLD,"sol[%i] = %g\n",nbd,spstiff.sol[node]);
 		}
 	}
 	
-	ierr = MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
-	ierr = MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
+	ierr = MatAssemblyBegin(pets->A,MAT_FINAL_ASSEMBLY);
+	ierr = MatAssemblyEnd(pets->A,MAT_FINAL_ASSEMBLY);
 	
-	ierr = VecAssemblyBegin(b);
-	ierr = VecAssemblyEnd(b);
-	ierr = VecAssemblyBegin(x);
-	ierr = VecAssemblyEnd(x);
+	ierr = VecAssemblyBegin(pets->b);
+	ierr = VecAssemblyEnd(pets->b);
+	ierr = VecAssemblyBegin(pets->x);
+	ierr = VecAssemblyEnd(pets->x);
 	
 	// prints the vecs and mats
 	//ierr = MatView(A,PETSC_VIEWER_STDOUT_WORLD);
@@ -105,12 +73,12 @@ void ptsolve(bool wbin,PetscMPIInt size)
 	//check is symmetric
 	PetscReal symtol = 0.0;
 	PetscBool symflg;
-	ierr = MatIsSymmetric(A,symtol,&symflg);
+	ierr = MatIsSymmetric(pets->A,symtol,&symflg);
 	PetscPrintf(PETSC_COMM_WORLD,"Symmetric = %d\n",symflg);
 
 	if (wbin)
 	{
-		ierr = writebin(&A,&x,&b);
+		ierr = writebin(&pets->A,&pets->x,&pets->b);
 		PetscPrintf(PETSC_COMM_WORLD,"... printing bin files\n");
 		PetscFinalize();
 		return;
@@ -118,10 +86,10 @@ void ptsolve(bool wbin,PetscMPIInt size)
 		
 	// Setup the solver
 	PetscPrintf(PETSC_COMM_WORLD,"Setuping up solver...\n");
-	ierr = KSPCreate(PETSC_COMM_WORLD,&ksp);
-	ierr = KSPSetOperators(ksp,A,A); // Use the matrix as the preconditioning matrix
+	ierr = KSPCreate(PETSC_COMM_WORLD,&pets->ksp);
+	ierr = KSPSetOperators(pets->ksp,pets->A,pets->A); // Use the matrix as the preconditioning matrix
 	//ierr = PCFactorSetDropTolerance(pc,droptolselect(*argc,*argv),0.05,dnz);
-	ierr = KSPSetTolerances(ksp,tol,PETSC_DEFAULT,PETSC_DEFAULT,maxit);
+	ierr = KSPSetTolerances(pets->ksp,tol,PETSC_DEFAULT,PETSC_DEFAULT,maxit);
 	// set non-zero initial guess here
 	// -- Currently zero
 
@@ -130,81 +98,81 @@ void ptsolve(bool wbin,PetscMPIInt size)
 	switch (soltyp)
 	{
 		case 0:
-			ierr = KSPSetType(ksp,KSPPREONLY); // Applied only the preconditioner once
+			ierr = KSPSetType(pets->ksp,KSPPREONLY); // Applied only the preconditioner once
 			// May only working with PCLU and PCCHOLESKY
 			break;
 		case 1:
-			ierr = KSPSetType(ksp,KSPCG); // Set solver
+			ierr = KSPSetType(pets->ksp,KSPCG); // Set solver
 			break;
 		case 2:
-			ierr = KSPSetType(ksp,KSPBCGS);
+			ierr = KSPSetType(pets->ksp,KSPBCGS);
 			break;	
 		case 3:
-			ierr = KSPSetType(ksp,KSPGMRES);
+			ierr = KSPSetType(pets->ksp,KSPGMRES);
 			break;
 		case 4:
-			ierr = KSPSetType(ksp,KSPMINRES);
+			ierr = KSPSetType(pets->ksp,KSPMINRES);
 			break;
 	}
 	
 
 	// Set preconditioner and tolerance
-	ierr = KSPGetPC(ksp,&pc);
+	ierr = KSPGetPC(pets->ksp,&pets->pc);
 	switch (pctyp)
 	{
 		case 0:
-			ierr = PCSetType(pc,PCNONE);
+			ierr = PCSetType(pets->pc,PCNONE);
 			break;
 		case 1:
-			ierr = PCSetType(pc,PCJACOBI);
+			ierr = PCSetType(pets->pc,PCJACOBI);
 			break;
 		case 2:
 			if (soltyp==0)
 			{
-				ierr = PCSetType(pc,PCLU); // complete LU
+				ierr = PCSetType(pets->pc,PCLU); // complete LU
 			}
 			else
 			{
-				ierr = PCSetType(pc,PCILU); // incomplete LU
+				ierr = PCSetType(pets->pc,PCILU); // incomplete LU
 			}
 			break;
 		case 3:
 			if (soltyp==0)
 			{
-				ierr = PCSetType(pc,PCCHOLESKY);
+				ierr = PCSetType(pets->pc,PCCHOLESKY);
 			}
 			else
 			{
-				ierr = PCSetType(pc,PCICC);
+				ierr = PCSetType(pets->pc,PCICC);
 			}
 			break;
 		case 4:
-			ierr = PCSetType(pc,PCGAMG);
-			ierr = PCGAMGSetType(pc,PCGAMGAGG);
+			ierr = PCSetType(pets->pc,PCGAMG);
+			ierr = PCGAMGSetType(pets->pc,PCGAMGAGG);
 			break;
 	}	
 
 	// for condition number
-        ierr = KSPSetComputeSingularValues(ksp,PETSC_TRUE);
-        ierr = KSPSetUp(ksp);
+        ierr = KSPSetComputeSingularValues(pets->ksp,PETSC_TRUE);
+        ierr = KSPSetUp(pets->ksp);
 	
 	// Solve linear system here
 	PetscPrintf(PETSC_COMM_WORLD,"Running solver...\n");
 	getrusage(RUSAGE_SELF, &usage);
 	start = usage.ru_utime;
-	ierr = KSPSolve(ksp,b,x);
+	ierr = KSPSolve(pets->ksp,pets->b,pets->x);
 	getrusage(RUSAGE_SELF, &usage);
 	end = usage.ru_utime;
 	timet = (double)(end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) * 1e-6;
 
-	ierr = KSPView(ksp,PETSC_VIEWER_STDOUT_WORLD); // view solver info
+	ierr = KSPView(pets->ksp,PETSC_VIEWER_STDOUT_WORLD); // view solver info
 
         // Calculate condition number
-        ierr = KSPComputeExtremeSingularValues(ksp,&emax,&emin);
+        ierr = KSPComputeExtremeSingularValues(pets->ksp,&emax,&emin);
         double acond = emax/emin;
         
-        ierr = KSPGetIterationNumber(ksp,&its);
-        ierr = KSPGetResidualNorm(ksp,&rnorm);
+        ierr = KSPGetIterationNumber(pets->ksp,&its);
+        ierr = KSPGetResidualNorm(pets->ksp,&rnorm);
         ierr = PetscMemoryGetMaximumUsage(&mem);
 
         PetscPrintf(PETSC_COMM_WORLD,"Residual norm = %14.6e\nIterations = %i\n",(double)rnorm,its);
@@ -214,7 +182,7 @@ void ptsolve(bool wbin,PetscMPIInt size)
 
         // Recover solution
 	PetscScalar *get;
-	ierr = VecGetArray(x,&get);
+	ierr = VecGetArray(pets->x,&get);
 	for (node=0;node<nnode;node++)
 	{
 		nbd = bdflag[node];
@@ -224,13 +192,7 @@ void ptsolve(bool wbin,PetscMPIInt size)
 			//printf("sol(%.5f,%.5f,%.5f) = %.15f\n",msh.s[node*dim+0],msh.s[node*dim+1],msh.s[node*dim+2],spstiff.sol[node]);
 		}
 	}
-	ierr = VecRestoreArray(x,&get);
-	
-	// Clear workspace
-	ierr = VecDestroy(&x);
-	ierr = VecDestroy(&b);
-	ierr = MatDestroy(&A);
-	ierr = KSPDestroy(&ksp);
+	ierr = VecRestoreArray(pets->x,&get);
 	
 	PetscPrintf(PETSC_COMM_WORLD,"--------------------\n");
 	//PetscFinalize();
