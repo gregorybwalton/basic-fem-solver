@@ -7,7 +7,8 @@ static void bulgez(double,double *,int *,double,double);
 // radial basis interpolation functions
 static void RBFinterp(double *,int *);
 static void radialsolve(list_node **,double *,double *,double *,int *,int,int,int);
-static double phifunction(double *,double *,int);
+static void cpvec(double *,double *,double *,int *,int,int);
+static double phifunction(double);
 void poplist(list_node **,double,int);
 
 void deformmesh(int deftype,double dx)
@@ -176,6 +177,10 @@ static void RBFinterp(double *sn,int *reg)
 	double phi;
 	int nz = 0;
 	int d,id;
+	// compromise between vector of nb*nb and calling phifunc multiple times
+	double *phij = (double *)calloc(nb,sizeof(double));
+
+	/*
 	for (d=0;d<dim;d++)
 	{
 	        for (i=0;i<nb;i++)
@@ -187,15 +192,25 @@ static void RBFinterp(double *sn,int *reg)
 			alist[id]->next = NULL;
 			current = alist[id];
 			nnz[id] = 1;
-			for (j=i+1;j<nb;j++) // only strict upper triangular mat
+			//for (j=i+1;j<nb;j++) // only strict upper triangular mat
+	                //{
+			//	phi = phifunction(&s[bi[i]*dim],&s[bi[j]*dim],dim);
+			//	if (phi != 0.0)
+			//	{
+			//		poplist(&current,phi,j+d*neq);
+			//		nnz[id]++;
+			//	}
+			//}
+
+			phifuncvec(phij,&s[bi[i]*dim],s,&bi[i+1],(nb-i-1),dim);
+			for (j=0;j<(nb-i-1);j++) // only strict upper triangular mat
 	                {
-				phi = phifunction(&s[bi[i]*dim],&s[bi[j]*dim],dim);
-				if (phi != 0.0)
+				if (phij[j] != 0.0)
 				{
-					poplist(&current,phi,j+d*neq);
+					poplist(&current,phij[j],j+i+1+d*neq);
 					nnz[id]++;
 				}
-			}
+			}			
 			// P block
 			poplist(&current,1.,nb+d*neq);
 			nnz[id]++;
@@ -212,14 +227,59 @@ static void RBFinterp(double *sn,int *reg)
 			// change the zero block to 1e-10 identity
 			alist[id] = (list_node *)malloc(sizeof(list_node));
 	                alist[id]->na = id;
-	                alist[id]->val = 1.e-10; // diagonal is always one
+	                alist[id]->val = 1.e-10; // scaling the diagonal
 	                alist[id]->next = NULL;
 			nnz[id] = 1;
-			//nnz[i]++;
-			//nnz[i] = 0; // last 4 rows are empty
 			nz += nnz[id];
 		}
 	}
+	*/
+	for (i=0;i<nb;i++)
+	{
+		cpvec(phij,&s[bi[i]*dim],s,&bi[i+1],(nb-i-1),dim);
+		for (d=0;d<dim;d++)
+	        {
+			id = i+d*neq;
+			alist[id] = (list_node *)malloc(sizeof(list_node));
+			alist[id]->na = id;
+			alist[id]->val = 1.; // diagonal is always one
+			alist[id]->next = NULL;
+			current = alist[id];
+			nnz[id] = 1;
+			for (j=0;j<(nb-i-1);j++) // only strict upper triangular mat
+	                {
+				if (phij[j] != 0.0)
+				{
+					poplist(&current,phij[j],j+i+1+d*neq);
+					nnz[id]++;
+				}
+			}			
+			// P block
+			poplist(&current,1.,nb+d*neq);
+			nnz[id]++;
+			for (j=0;j<dim;j++)
+			{
+				poplist(&current,s[bi[i]*dim+j],nb+j+1+d*neq);
+				nnz[id]++;
+			}
+			nz += nnz[id];
+		}
+	}
+	for (i=nb;i<neq;i++) 
+	{
+		for (d=0;d<dim;d++)
+		{
+			id = i+d*neq;
+			// change the zero block to 1e-10 identity
+			alist[id] = (list_node *)malloc(sizeof(list_node));
+	                alist[id]->na = id;
+	                alist[id]->val = 1.e-10; // scaling the diagonal
+	                alist[id]->next = NULL;
+			nnz[id] = 1;
+			nz += nnz[id];
+		}
+	}
+
 	//writelist(alist,nz,neq*dim,"alist.dat");
 	
 	double *f = (double *)calloc(neq*dim,sizeof(double));
@@ -237,6 +297,7 @@ static void RBFinterp(double *sn,int *reg)
 
 	double *alp,*bet;
 	double tmp,p;
+	/*
 	for (d=0;d<dim;d++)
 	{
 		alp = &alpha[d*nb];
@@ -245,12 +306,14 @@ static void RBFinterp(double *sn,int *reg)
 		{
 			if (b[n]==-1)
 			{
-				tmp = 0.;
-				for (k=0;k<nb;k++)
-				{
-					//tmp += alpha[k]*phifunction(&sn[n*dim],&sn[bi[k]*dim],dim);
-					tmp += alp[k]*phifunction(&s[n*dim],&s[bi[k]*dim],dim);
-				}
+				//tmp = 0.;
+				//for (k=0;k<nb;k++)
+				//{
+				//	tmp += alp[k]*phifunction(&s[n*dim],&s[bi[k]*dim],dim);
+				//}
+				phifuncvec(phij,&s[n*dim],s,bi,nb,dim);
+				tmp = 0.; 
+				for (k=0;k<nb;k++) tmp += alp[k]*phij[k];
 				p = bet[0] + (s[n*dim]*bet[1]) + (s[n*dim+1]*bet[2]) + (s[n*dim+2]*bet[3]);
 				sn[n*dim+d] = tmp + p;
 				if (sn[n*dim+d]<0. || sn[n*dim+d]>1.) printf("Error: node leakage, new location outside of the domain.\n");
@@ -258,6 +321,26 @@ static void RBFinterp(double *sn,int *reg)
 			//printf("s[%d] = %.5f\n",n,sn[n*dim+i]);
 		}
 	}
+	*/
+	for (n=0;n<nnode;n++)
+	{
+		if (b[n]==-1)
+		{
+			cpvec(phij,&s[n*dim],s,bi,nb,dim);
+			for (d=0;d<dim;d++)
+			{
+				alp = &alpha[d*nb];
+				bet = &beta[d*(dim+1)];
+				tmp = 0.; 
+				for (k=0;k<nb;k++) tmp += alp[k]*phij[k];
+				p = bet[0] + (s[n*dim]*bet[1]) + (s[n*dim+1]*bet[2]) + (s[n*dim+2]*bet[3]);
+				sn[n*dim+d] = tmp + p;
+                                if (sn[n*dim+d]<0. || sn[n*dim+d]>1.) printf("Error: node leakage, new location outside of the domain.\n");
+			}
+		}
+	}
+
+	free(phij);
 	free(f); free(alpha); free(beta);
 	free(bi); free(b); free(nnz);
 	for (i=0;i<neq*dim;i++)
@@ -272,26 +355,35 @@ static void RBFinterp(double *sn,int *reg)
 	return;
 }
 
-static double phifunction(double *xi,double *xj,int dim)
-// definition of the radial basis function
+static void cpvec(double *phi,double *xi,double *xs,int *bi,int n,int dim)
+// rbf compact support vectorised
+{
+	int i,j;
+	// the larger the value, the more accurate and more dense the solution
+	//double r = 0.2; // works well
+	double r = 2.5*0.3; // 2.5 times characteristic length
+	double x;
+
+	for (i=0;i<n;i++)
+	{
+		x = 0.;
+		for (j=0;j<dim;j++) x += (*(xi+j)-xs[*(bi+i)*dim+j]) * (*(xi+j)-xs[*(bi+i)*dim+j]);
+		x = sqrt(x);
+		x /= r;
+		phi[i] = 0.;
+		if (x <= 1.) phi[i] = phifunction(x);
+	}
+	return;
+}
+
+static double phifunction(double x)
+// compact support basis functions
 {
 	double phi;
-	int i;
-	// rule of thumb: smallest as possible
-	//double r = 0.1; // radius of influence
-	double r = 0.2;
-	double x = 0.;
-	for (i=0;i<dim;i++) x += (*(xi+i)-*(xj+i))*(*(xi+i)-*(xj+i));
-	x = sqrt(x);
-	x /= r;
-	if (x > 1.){
-		phi = 0.;
-	} else {
-		phi = (1.-x)*(1.-x); // radial basis function compact support
-		//phi = pow(1.-x,4.)*(4.*x+1.); // c2
-		//phi = pow(1.-x,6.)*(((35./3.)*pow(x,2.))+6.*x+1.); // c6
-	}
-
+	//phi = (1.-eps)*(1.-eps); // CP c0
+	//phi = pow(1.-eps,4.)*(4.*eps+1.); // c2
+	//phi = pow(1.-eps,6.)*(((35./3.)*pow(eps,2.))+6.*eps+1.); // c6
+	phi = 1. + (80./3.)*(x*x) - 40.*(x*x*x) + 15.*(x*x*x*x) - (8./3.)*(x*x*x*x*x) + 20.*(x*x)*log(x);
 	return phi;
 }
 

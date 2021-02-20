@@ -340,23 +340,25 @@ void interplocal(double *sn,int nnode)
 	double v,vk;
 	int knode = msh.knode;
 	int dim = msh.dim;
+	int nel = msh.nel;
 	int *neigh = msh.neigh;
 	 double *newu = (double *)malloc(sizeof(double)*nnode);
         double *beta = (double *)malloc(sizeof(double)*knode);
 	double **ik = (double **)malloc(sizeof(double *)*knode);
+	int *col = (int *)malloc(sizeof(int *)*nel); // color vector to check if visisted
 
 	printf("TETGEN: Interpolating to new mesh\n");
 
-	// useful for debugging
+	// useful for debugging - non interpolated nodes are 1
 	for (n=0;n<nnode;n++) newu[n] = 1.0;
 
 	for (n=0;n<nnode;n++)
-	//for (n=0;n<1001;n++)
-	//for (n=0;n<1;n++)
 	{
 		eni = 0; // starting element for now
 		found = 0;
 		//printf("sn = (%.5f, %.5f, %.5f)\n",sn[n*dim],sn[n*dim+1],sn[n*dim+2]);
+		
+		for (el=0;el<nel;el++) col[el] = 0;
 
 		while (found != 1)
 		{
@@ -369,6 +371,7 @@ void interplocal(double *sn,int nnode)
                         printf("%.5f %.5f %.5f];\n",msh.s[msh.icon[knode*en+3]*dim],msh.s[msh.icon[knode*en+3]*dim+1],msh.s[msh.icon[knode*en+3]*dim+2]);
 			*/
 			v = evolume(en);
+			col[en] = 1;
 			found = 1;
 			for (i=0;i<knode;i++)
 			{
@@ -386,7 +389,7 @@ void interplocal(double *sn,int nnode)
 				//printf("eni = %d\n",eni+1);
 
 				// some dodgy round, since vtks are only written to 6 d.p.
-				if (beta[i]<0. && fabs(beta[i])>1.e-10 && eni>-1 && en!=eni)
+				if (beta[i]<0. && fabs(beta[i])>1.e-10 && col[eni]==0)
 				{
 					found = 0;
 					break;			
@@ -411,6 +414,6 @@ void interplocal(double *sn,int nnode)
                 spstiff.sol[n] = newu[n];
         }
 
-	free(newu); free(beta); free(ik);
+	free(newu); free(beta); free(ik); free(col);
 	return;
 }
