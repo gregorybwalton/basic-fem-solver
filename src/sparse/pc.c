@@ -129,31 +129,3 @@ double *sol;
 	exit(0);
 }
 
-list_node** copylist(head,nt)
-list_node** head;
-int nt;
-{
-	list_node **newhead = (list_node **)calloc(nt,sizeof(list_node *));
-	list_node *newcurrent;
-	list_node *current;
-	int ii;
-
-	for (ii=0;ii<nt;ii++)
-	{
-		newhead[ii] = (list_node *)malloc(sizeof(list_node));
-		newhead[ii]->na = head[ii]->na;
-		newhead[ii]->val = head[ii]->na;
-		newhead[ii]->next = NULL;
-		newcurrent = newhead[ii];
-		current = head[ii];
-		
-		while (current->next != NULL)
-		{
-			newcurrent->next = (list_node *)malloc(sizeof(list_node));
-			newcurrent->next->na = current->next->na;
-			newcurrent->next->val = current->next->val;
-			newcurrent->next->next = NULL;
-		}
-	}
-	return newhead;
-}
