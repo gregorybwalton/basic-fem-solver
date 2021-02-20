@@ -13,7 +13,7 @@ INCLUDE=$(PI) $(TI)
 LDFLAGS=$(PLD) $(TLD)
 #LDLIBS=-lm -w \
 
-#LDLIBS=-lm -w -ggdb \ 
+#LDLIBS=-lm -w -ggdb -O3 \ 
 LDLIBS=-lm -w -ggdb -pg \
 	-lpetsc -ltet
 OBJC=fem.c\
