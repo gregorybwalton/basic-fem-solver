@@ -7,5 +7,5 @@
 - [See here for installation instructions](https://www.mcs.anl.gov/petsc/)
 
 ## To do
--[ ] Finite element isoparametric interpolation from the old mesh to the new mesh (instead of just a linear interpolation)
+- [ ] Finite element isoparametric interpolation from the old mesh to the new mesh (instead of just a linear interpolation)
 
